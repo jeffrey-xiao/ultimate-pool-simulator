@@ -1,0 +1,52 @@
+\documentclass[11pt]{article}
+\usepackage[pdftex]{graphicx}
+\usepackage{enumerate}
+\usepackage[
+    letterpaper,
+    left=1.0in,
+    right=1.0in,
+    top=0.75in
+]{geometry}
+
+\setlength{\textwidth}{6.5in}
+\setlength{\textheight}{10in}
+\pagenumbering{gobble}
+\begin{document}
+\begingroup  
+  \centering
+  \LARGE \textbf{SE101 Lab Proposal: Digit Recognizer}\\\vspace{0.4cm}
+  \large Daniel Tong dy2tong\\
+  \large Jeffrey Xiao j39xiao\\\vspace{0.2cm}
+  \normalsize \today \par
+\endgroup
+
+\vspace{0.5cm}
+\section*{Summary}
+Our idea is to use the accelerometer and gyroscope to track the position of the Tiva on a 3D plane. By frequently sampling the position of the Tiva, we can ``draw'' digits by mapping 3D coordinates to a 2D plane. We then plan to use machine learning (forward-feed neural networks) to classify the drawn digits from the 2D image. Finally we will output the digits in the visual display as well as in Morse code.
+
+\section*{Software Components}
+\begin{itemize}
+	\item \textbf{Position Sampling}: Tracking and recording the 3D position of the Tiva over a period of a time using the accelerometer and gyroscope. The position is sampled at regular intervals when a specific button is held. The image is then fed to the data whitening step when another button is pressed.
+	\item \textbf{Data Whitening}: Taking raw coordinates and processing it into a 28 pixel by 28 pixel image for image classification.
+	\item \textbf{Neural Network}: Training a multilayer neural network with ten classes to classify digits.
+	\item \textbf{Morse Code and Display}: Displaying the number on the LCD screen and flashing it in Morse code.
+\end{itemize}
+
+\section*{Hardware Components}
+\begin{itemize}
+	\item \textbf{Accelerometer}: For \emph{Position Sampling}
+	\item \textbf{Gyroscope}: For \emph{Position Sampling}
+	\item \textbf{LCD Screen}: For \emph{Morse Code and Display}
+	\item \textbf{Buttons}: For \emph{Position Sampling}
+\end{itemize}
+
+\section*{Challenges}
+\begin{itemize}
+	\item Using the accelerometer and gyroscope to track the 3D position of the Tiva.
+	\item Converting the 3D position to accurate relative 2D position.
+	\item Training an efficient multi-layer neural network to recognize drawn digits.
+	\item Using regularization during training to produce a more accurate model. Since our training data will be the MNIST dataset, it might not generalize well to the digits drawn by the Tiva.
+	\item Properly displaying the number and Morse code to the LCD screen.
+\end{itemize}
+
+\end{document}
