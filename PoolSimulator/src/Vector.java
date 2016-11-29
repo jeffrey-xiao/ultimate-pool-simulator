@@ -41,6 +41,14 @@ public class Vector {
 	public double det (Vector v) {
 		return x * v.y - v.x * y;
 	}
+	
+	public Vector signum () {
+		return new Vector(Math.signum(x), Math.signum(y));
+	}
+	
+	public Vector abs () {
+		return new Vector(Math.abs(x), Math.abs(y));
+	}
 
 	// point projected on vector d which goes through the origin
 	public Vector proj (Vector d) {

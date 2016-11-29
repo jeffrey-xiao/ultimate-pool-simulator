@@ -29,17 +29,17 @@ public class GamePanel extends JPanel implements MouseListener, MouseMotionListe
 	public static final int PLAY_HEIGHT = (int) (2.84 * METER_TO_PIXEL);
 	public static final int BALL_RADIUS = (int) (0.04615 * METER_TO_PIXEL);
 
-	public static final double FRICTION = 0.01;
-	public static final double BALL_RESISTITION = 1.1;
-	public static final double SPECIAL_RESISTITION = 1.1;
+	public static final double FRICTION = 0.0075;
+	public static final double ROLLING_FRICTION = 0.01;
+	public static final double BALL_RESISTITION = 1.0;
 	public static final double WALL_RESISTITION = 0.5;
-	public static final double EPS = 1e-9;
+	public static final double EPS = 1e-6;
 
 	// labeled from left to right, top to bottom
 	private Ball[] p = new Ball[6];
 
 	// 0 = cue ball
-	private Ball[] b = new Ball[16];
+	Ball[] b = new Ball[16];
 
 	// borders labeled from top to bottom, left to right
 	private Line[] borders = new Line[6];
@@ -157,13 +157,15 @@ public class GamePanel extends JPanel implements MouseListener, MouseMotionListe
 			main : for (int i = 0; i < b.length; i++) {
 				if (b[i].isSunk)
 					continue;
-
-				b[i].update();
-
+				if (i == 0)
+				b[i].update(true);
+				else
+					b[i].update(false);
 				for (int j = 0; j < p.length; j++) {
 					if (b[i].overlap(p[j])) {
 						b[i].isSunk = true;
 						b[i].vel = new Vector(0, 0);
+						b[i].omega = new Vector(0, 0);
 
 						if (i == 0)
 							state = GameState.BALL_IN_HAND;
@@ -177,7 +179,7 @@ public class GamePanel extends JPanel implements MouseListener, MouseMotionListe
 						continue main;
 					}
 				}
-
+				
 				for (int j = 0; j < borders.length; j++) {
 					if (b[i].isIntersecting(borders[j])) {
 						// 0 and 5 are vertical flips
@@ -241,7 +243,7 @@ public class GamePanel extends JPanel implements MouseListener, MouseMotionListe
 	public boolean isStaticSystem () {
 		boolean ret = true;
 		for (int i = 0; i < b.length; i++)
-			ret &= b[i].vel.norm() < EPS;
+			ret &= b[i].vel.norm() < EPS && b[i].omega.norm() < EPS;
 		return ret;
 	}
 
