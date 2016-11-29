@@ -56,7 +56,7 @@ public class GamePanel extends JPanel implements MouseListener, MouseMotionListe
 		double widthGap = TABLE_WIDTH - PLAY_WIDTH;
 		double heightGap = TABLE_HEIGHT - PLAY_HEIGHT;
 
-		int radius = (int) (widthGap / 2.20);
+		int radius = (int) (widthGap / 2);
 		double dx = widthGap / 6 + radius;
 		double dy = heightGap / 6 + radius;
 		double offset = BALL_RADIUS;

@@ -1,12 +1,16 @@
+import java.util.function.Consumer;
+
 import jssc.*;
 
 public class SerialReader implements SerialPortEventListener {
-	static SerialPort serialPort;
-	static StringBuilder msg = new StringBuilder();
-	boolean receivingMessage = false;
+	private SerialPort serialPort;
+	private StringBuilder msg = new StringBuilder();
+	private boolean receivingMessage = false;
+	private Consumer<String> func;
 	
-	public SerialReader (String comName) {
-		serialPort = new SerialPort("COM3");
+	public SerialReader (String comName, Consumer<String> consumer) {
+		this.serialPort = new SerialPort("COM3");
+		this.func = consumer;
 		initializePort();
 	}
 	
@@ -33,7 +37,7 @@ public class SerialReader implements SerialPortEventListener {
 					} else if (receivingMessage) {
 						if (c == '\r') {
 							receivingMessage = false;
-							System.out.println("RECEIVED MESSAGE " + msg.toString());
+							func.accept(msg.toString());
 						} else {
 							msg.append((char)c);
 						}

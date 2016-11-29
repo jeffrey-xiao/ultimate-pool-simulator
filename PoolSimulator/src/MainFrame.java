@@ -1,6 +1,7 @@
 import java.awt.*;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
+import java.util.function.Consumer;
 
 import javax.swing.*;
 
@@ -19,6 +20,9 @@ public class MainFrame extends JFrame implements KeyListener {
 
 	MainFrame () throws InterruptedException {
 		super("Pool Simulator");
+		Consumer<String> consumer = (x) -> processInput(x);
+		SerialReader sr = new SerialReader("COM3", consumer);
+		
 		addKeyListener(this);
 		setSize(900, 950);
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -59,7 +63,16 @@ public class MainFrame extends JFrame implements KeyListener {
 			Thread.sleep(1);
 		}
 	}
-
+	
+	private void processInput (String s) {
+		double val = Integer.parseInt(s);
+		val = (val - 2048) / 2048.0;
+		//val = Math.signum(val) * Math.sqrt(Math.abs(val   ));
+		if (Math.abs(val) > 0.05){
+			g.angle += (val-Math.signum(val)*0.05)/50.0;
+		}
+	}
+	
 	@Override
 	public void keyPressed (KeyEvent e) {
 		int keyCode = e.getKeyCode();
