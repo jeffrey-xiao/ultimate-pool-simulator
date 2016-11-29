@@ -64,4 +64,30 @@ public class Ball {
 			vel = vel.subtract(sub);
 		}
 	}
+	
+	public int getType () {
+		if (isSolid())
+			return UserPanel.SOLID_ID;
+		if (isStriped())
+			return UserPanel.STRIPED_ID;
+		if (isBlack())
+			return UserPanel.BLACK_ID;
+		return UserPanel.NONE_ID;
+	}
+	
+	public boolean isSolid () {
+		return primary == secondary && !isCue() && !isBlack();
+	}
+	
+	public boolean isStriped () {
+		return primary != secondary && !isCue() && !isBlack();
+	}
+	
+	public boolean isCue () {
+		return primary == Color.WHITE && secondary == Color.WHITE;
+	}
+	
+	public boolean isBlack () {
+		return primary == Color.BLACK && secondary == Color.BLACK;
+	}
 }

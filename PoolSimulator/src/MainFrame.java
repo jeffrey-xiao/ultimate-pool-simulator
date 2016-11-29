@@ -1,6 +1,7 @@
 import java.awt.*;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
+import java.util.StringTokenizer;
 import java.util.function.Consumer;
 
 import javax.swing.*;
@@ -14,14 +15,19 @@ public class MainFrame extends JFrame implements KeyListener {
 	private static final double FRAMES_PER_SEC = 500;
 	private static final double SECS_PER_FRAME = 1000 / FRAMES_PER_SEC;
 
-	private GamePanel g = new GamePanel();
-	private UserPanel player1 = new UserPanel("Player 1", true), player2 = new UserPanel("Player 2", false);
+	private GamePanel g = new GamePanel(this);
+	private UserPanel[] players = new UserPanel[] {
+		new UserPanel("Player 1", true), 
+		new UserPanel("Player 2", false)
+	};
+	private int currentPlayer = 0;
 	private boolean[] keyPressed = new boolean[2];
 
 	MainFrame () throws InterruptedException {
 		super("Pool Simulator");
+		
 		Consumer<String> consumer = (x) -> processInput(x);
-		SerialReader sr = new SerialReader("COM3", consumer);
+		new SerialReader("COM3", consumer);
 		
 		addKeyListener(this);
 		setSize(900, 950);
@@ -40,13 +46,10 @@ public class MainFrame extends JFrame implements KeyListener {
 		c.gridy = 0;
 		c.gridheight = 1;
 		c.fill = GridBagConstraints.NONE;
-		contentPane.add(player1, c);
+		contentPane.add(players[0], c);
 		c.gridx = 1;
 		c.gridy = 1;
-		contentPane.add(player2, c);
-
-		player1.setType(UserPanel.STRIPED_ID);
-		player2.setType(UserPanel.SOLID_ID);
+		contentPane.add(players[1], c);
 		
 		setVisible(true);
 
@@ -64,12 +67,63 @@ public class MainFrame extends JFrame implements KeyListener {
 		}
 	}
 	
+	public void switchTurns () {
+		players[0].toggleIsPlaying();
+		players[1].toggleIsPlaying();
+		currentPlayer ^= 1;
+	}
+	
+	public void addBall (Ball b, boolean isBreak) {
+		players[currentPlayer].addBall(b);
+		if (players[currentPlayer].getType() == UserPanel.NONE_ID && !isBreak) {
+			players[currentPlayer].setType(b.getType());
+			players[currentPlayer ^ 1].setType(b.getType() == UserPanel.STRIPED_ID ? UserPanel.SOLID_ID : UserPanel.STRIPED_ID);
+		}
+		
+		if (!g.hasUnsunkType(players[currentPlayer].getType()))
+			players[currentPlayer].setType(UserPanel.BLACK_ID);
+		if (!g.hasUnsunkType(players[currentPlayer ^ 1].getType()))
+			players[currentPlayer ^ 1].setType(UserPanel.BLACK_ID);
+	}
+	
+	public boolean isScratch (Ball b) {
+		int type = 0;
+		if (b.isBlack())
+			type = UserPanel.BLACK_ID;
+		else if (b.isStriped())
+			type = UserPanel.STRIPED_ID;
+		else if (b.isSolid())
+			type = UserPanel.SOLID_ID;
+		return players[currentPlayer].getType() != type && players[currentPlayer].getType() != 0;
+	}
+	
+	public void reset () {
+		players[0].reset();
+		players[1].reset();
+		players[0].setIsPlaying(true);
+		players[1].setIsPlaying(false);
+		g.reset();
+	}
+	
 	private void processInput (String s) {
-		double val = Integer.parseInt(s);
-		val = (val - 2048) / 2048.0;
-		//val = Math.signum(val) * Math.sqrt(Math.abs(val   ));
-		if (Math.abs(val) > 0.05){
-			g.angle += (val-Math.signum(val)*0.05)/50.0;
+		StringTokenizer st = new StringTokenizer(s);
+		String cmd = st.nextToken();
+
+		double val;
+		switch (cmd) {
+			case "RESET_GAME":
+				reset();
+				break;
+			case "CHANGE_ANGLE":
+				val = Integer.parseInt(st.nextToken());
+				val = (val - 2048) / 2048.0;
+				if (Math.abs(val) > 0.05)
+					g.changeDirectionAngle((val - Math.signum(val) * 0.05) / 50.0);
+				break;
+			case "SHOT":
+				val = Double.parseDouble(st.nextToken());
+				g.setVelocity(val);
+				break;
 		}
 	}
 	
@@ -82,12 +136,10 @@ public class MainFrame extends JFrame implements KeyListener {
 			keyPressed[1] = true;
 
 		if (keyPressed[0]) {
-			g.angle -= 0.02;
-			g.r = 1 << 30;
+			g.changeDirectionAngle(-0.02);
 		}
 		if (keyPressed[1]) {
-			g.angle += 0.02;
-			g.r = 1 << 30;
+			g.changeDirectionAngle(+0.02);
 		}
 	}
 
@@ -104,7 +156,5 @@ public class MainFrame extends JFrame implements KeyListener {
 
 	@Override
 	public void keyTyped (KeyEvent e) {
-		int keyCode = e.getKeyCode();
-		System.out.println(keyCode);
 	}
 }
