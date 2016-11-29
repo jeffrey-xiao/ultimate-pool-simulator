@@ -25,69 +25,84 @@ const uint32_t POTENTIOMETER = PE_3;  //potentiometer
 
 // variables will change:
 int buttonState = 0;         // variable for reading the pushbutton status
+int BTN1State=0;
+void WireInit();
+void accelInit();
+
+void accelTick();
+void setState();
+void sendShot();
+int isShooting();
 
 void setup() {
+  WireInit();
   // initialize the LEDs pin as an output:
-  pinMode(RED_LED, OUTPUT);      
-  pinMode(BLUE_LED, OUTPUT);      
-  pinMode(GREEN_LED, OUTPUT);      
-
-  // init Orbit LEDs
-  pinMode(Orbit_LD1, OUTPUT);      
-  pinMode(Orbit_LD2, OUTPUT);      
-  pinMode(Orbit_LD3, OUTPUT);      
-  pinMode(Orbit_LD4, OUTPUT);      
-  
-  // initialize the pushbutton pins as an input:
-  pinMode(PUSH1, INPUT_PULLUP);     
-  pinMode(PUSH2, INPUT_PULLUP);     
-  
-  pinMode(Orbit_BTN1, INPUT_PULLUP);     
-  pinMode(Orbit_BTN2, INPUT_PULLUP);     
-  pinMode(Orbit_SLIDE1, INPUT_PULLDOWN);   
-  pinMode(Orbit_SLIDE2, INPUT_PULLDOWN);     
+    
   Serial.begin(9600);
+  delay(100);
+
+  accelInit();
 }
- int RESET_CHECK=0;
+bool RESET_CHECK=false;
+bool readyToShoot = false;
+bool unSet = true;
 void loop(){
   // read the state of the pushbutton value:
   buttonState = digitalRead(buttonPin);
 
   // check if the pushbutton is pressed.
   // if it is, the buttonState is HIGH:
- 
-  bool PRINT_CHECK=false;
+
+  if(RESET_CHECK){
+    if(buttonState==LOW)
+      Serial.print(">RESET_GAME");
+  }
   if (buttonState == LOW) {     
     // turn LED on:    
     digitalWrite(Orbit_LD4, HIGH);  
-    RESET_CHECK++;
-    delay(300);
-    Serial.print(">RESET_GAME_CHECK");
-    PRINT_CHECK=true;
+    RESET_CHECK=true;
+    delay(2500);
   } 
   else {
     // turn LED off:
+    RESET_CHECK=false;
     digitalWrite(Orbit_LD4, LOW); 
   }
-  if(PRINT_CHECK){
-    Serial.print(>);
-    PRINT_CHECK=false;
+
+  if (digitalRead(Orbit_SLIDE1) == HIGH && digitalRead(Orbit_SLIDE2) == LOW) {     // changing angle
+      digitalWrite(Orbit_LD1, HIGH);  
+      int potential=0;
+      potential = analogRead(POTENTIOMETER);
+      Serial.print(">angle");
+      Serial.println(potential);
+  } else {    // turn LED off:
+    digitalWrite(Orbit_LD1, LOW); 
   }
-    if (digitalRead(Orbit_SLIDE1) == HIGH) {     // turn LED on:    
-        digitalWrite(Orbit_LD1, HIGH);  
-        int potential=0;
-        potential = analogRead(POTENTIOMETER);
-        Serial.print(">");
-        Serial.println(potential);
-    } else {    // turn LED off:
-      digitalWrite(Orbit_LD1, LOW); 
-    }
-    if (digitalRead(Orbit_SLIDE2) == HIGH) {     // turn LED on:    
-      digitalWrite(Orbit_LD2, HIGH);  
-    } else {    // turn LED off:
-      digitalWrite(Orbit_LD2, LOW); 
-    }
+  
+  if (digitalRead(Orbit_SLIDE2) == HIGH && digitalRead(Orbit_SLIDE1) == LOW) {     // ready to shoot
+    digitalWrite(Orbit_LD2, HIGH); 
     
-    delay(10);
+    if(unSet)
+    {
+      readyToShoot=true;
+      accelTick(); 
+      setState();
+      unSet=false;
+    }
+  } else {    // turn LED off:
+    digitalWrite(Orbit_LD2, LOW); 
+    readyToShoot=false;
+    unSet=true;
+  }
+  if(readyToShoot)
+  {
+    accelTick();
+    if(isShooting()){
+   //   Serial.println(isShooting());
+      readyToShoot=false;
+      sendShot();
+    }
+  }
+  delay(10);
     
 }
