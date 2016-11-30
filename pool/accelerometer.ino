@@ -10,9 +10,10 @@ static uint8_t const  SensorAccelerometer = 0x1D;
 static uint32_t const shotThreshold      = 50;
 static  int const     shotSensitivity    = 15;
 static float const    shotConstant        = 10;
+static float const    posThreshold        = 40;
 int total=0;
 int n=0;
-int penis=0;
+int SCALE=1000;
 int avg=0;
 float x, y, z;
 float setY, setZ;
@@ -48,9 +49,11 @@ int isShooting()
    else{
     delay(50);
    }
+   /*
    Serial.print(shotDist);
    Serial.print(" ");
    Serial.println(shotTot/shotCounter/shotConstant);
+   */
    if(shotDist>=75)
     return 1;
    return 0;
@@ -65,13 +68,12 @@ void sendShot(){
   total=0;
   avg=0;
 }
-void setState()
-{
+void setState(){
     setY=y;
     setZ=z;
 }
-void accelTick()
-{
+
+void accelTick(){
   if(abs(y-setY)<shotThreshold && abs(z-setZ)<shotThreshold){
   total+=x;
   n++;
@@ -93,4 +95,50 @@ void accelTick()
   x = *(int16_t*)(&xi) ;
   y = *(int16_t*)(&yi);
   z = *(int16_t*)(&zi);
+  Serial.print(x);
+  Serial.print(" ");
+  Serial.print(y);
+  Serial.print(" ");
+  Serial.print(z);
+  Serial.println(" ");
 }
+
+void posTick(){
+  size_t const DataLength = 6;
+  uint32_t data[DataLength] = { 0 };
+  
+  WireWriteByte(SensorAccelerometer, 0x32);
+  WireRequestArray(SensorAccelerometer, data, DataLength);
+
+  uint16_t xi = (data[1] << 8) | data[0];
+  uint16_t yi = (data[3] << 8) | data[2];
+  uint16_t zi = (data[5] << 8) | data[4];
+
+  float x1 = *(int16_t*)(&xi);
+  float y1 = *(int16_t*)(&yi);
+  float z1 = *(int16_t*)(&zi);
+  Serial.print(">SCRATCH ");
+  if(abs(x1)>posThreshold){
+    Serial.print((-1)*x1/SCALE);
+    Serial.print(" ");
+  }
+  else{
+    Serial.print("0 ");
+  }
+  if(abs(y1)>posThreshold){
+    Serial.print(y1/SCALE);
+    Serial.println();
+  }
+  else{
+    Serial.println("0");
+  }
+  /*
+  Serial.print(x1);
+  Serial.print(" ");
+  Serial.print(y1);
+  Serial.print(" ");
+  Serial.print(z1);
+  Serial.println(" ");
+  */
+}
+

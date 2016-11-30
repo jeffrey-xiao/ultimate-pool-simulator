@@ -6,7 +6,8 @@
 #include <OrbitOledChar.h>
 #include <OrbitOledGrph.h>
 #include <Wire.h>
-
+#include <string.h>
+#include <stdbool.h>
 const int buttonPin = PUSH2;     // the number of the pushbutton pin (this is the bottom right button on the tiva and is inverted)
 //PUSH1 doesn't work because of TIVA
 const int ledPin =  GREEN_LED;      // the number of the LED pin
@@ -30,6 +31,7 @@ void WireInit();
 void accelInit();
 
 void accelTick();
+void posTick();
 void setState();
 void sendShot();
 int isShooting();
@@ -53,20 +55,26 @@ int gameState=1;
 bool RESET_CHECK=false;
 bool readyToShoot = false;
 bool unSet = true;
-
+int const SCRATCH=0;
 void loop(){
-  /*
+  
   switch(gameState){
+    case SCRATCH:
+      OrbitOledMoveTo(5, 10);
+      OrbitOledDrawString("SCRATCH");
+      OrbitOledUpdate();
+      break;
     case 1:
       OrbitOledMoveTo(5, 10);
       OrbitOledDrawString("Player 1");
-      Serial.println("Hello");
+      OrbitOledUpdate();
       break;
     case 2:
       OrbitOledMoveTo(5, 10);
       OrbitOledDrawString("Player 2");
+      OrbitOledUpdate();
       break;
-  }*/
+  }
   // read the state of the pushbutton value:
   buttonState = digitalRead(buttonPin);
 
@@ -90,7 +98,7 @@ void loop(){
     digitalWrite(Orbit_LD4, LOW); 
   }
 
-  if (digitalRead(Orbit_SLIDE2) == LOW) {     // changing angle
+  if (digitalRead(Orbit_SLIDE2) == LOW && digitalRead(Orbit_SLIDE1) == HIGH) {     // changing angle
       digitalWrite(Orbit_LD1, HIGH);  
       int potential=0;
       potential = analogRead(POTENTIOMETER);
@@ -124,6 +132,7 @@ void loop(){
       sendShot();
     }
   }
-  delay(10);
+  posTick();
+  delay(100);
     
 }
