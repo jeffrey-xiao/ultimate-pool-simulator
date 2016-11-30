@@ -31,6 +31,7 @@ int buttonState = 0;         // variable for reading the pushbutton status
 void WireInit();
 void accelInit();
 void GameUIInit();
+void SerialReaderInit();
 
 void accelTick();
 void posTick();
@@ -45,6 +46,7 @@ void setup() {
   WireInit();
   GameUIInit();
   OrbitOledInit();
+  SerialReaderInit();
   OrbitOledClear();
   OrbitOledClearBuffer();
   OrbitOledSetFillPattern(OrbitOledGetStdPattern(iptnSolid));
@@ -63,22 +65,10 @@ bool readyToShoot = false;
 bool unSet = true;
 
 
-int const SCRATCH = 0;
+int const SCRATCH = 3;
 void loop() {
-  /*
-    if(Serial.available()>0){
-    char first = Serial.read();
-    if(first=='<'){
-      String inputString="";
-       while(Serial.available()){
-        char inChar = (char)Serial.read();
-        inputString+=inChar;
-        if(inChar=="\n")
-        break;
-       }
-      Serial.println(inputString);
-    }
-    }*/
+  
+
   switch (gameState) {
     case SCRATCH:
       OrbitOledMoveTo(5, 10);
@@ -154,12 +144,13 @@ void loop() {
       sendShot();
     }
   }
-  posTick();
+  //posTick();
   if (checkBtn1()) {     // ready to shoot
     Serial.println(">DROP\n");
   }
   
   uiInputTick();
   delay(10);
+  SerialReaderTick();
 
 }

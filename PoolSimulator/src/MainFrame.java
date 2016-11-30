@@ -178,7 +178,7 @@ public class MainFrame extends JFrame implements KeyListener {
 				if (g.getState() != GamePanel.GameState.PLACING_BALL)
 					break;
 				if (g.isCuePositionOccupied())
-					break;
+					break;	q 
 				g.setGameState(GamePanel.GameState.PLAY);
 				break;
 		}

@@ -4,7 +4,8 @@ void WireRequestArray(int address, uint8_t* buffer, uint8_t amount);
 void WireWriteRegister(int address, uint8_t reg, uint8_t value);
 void WireWriteByte(int address, uint8_t value);
 
-static uint8_t const  SensorAccelerometer = 0x1D;
+static uint8_t const  ShotAccelerometer = 0x1D;
+static uint8_t const  posAccelerometer = 0x1D;
 static uint32_t const shotThreshold      = 50;
 static  int const     shotSensitivity    = 12;
 static float const    shotConstant        = 10;
@@ -18,8 +19,10 @@ float x, y, z;
 float setY, setZ;
 void accelInit()
 {
-  WireWriteRegister(SensorAccelerometer, 0x31, 1);
-  WireWriteRegister(SensorAccelerometer, 0x2D, 1 << 3);
+  WireWriteRegister(ShotAccelerometer, 0x31, 1);
+  WireWriteRegister(ShotAccelerometer, 0x2D, 1 << 3);
+  WireWriteRegister(posAccelerometer, 0x31, 1);
+  WireWriteRegister(posAccelerometer, 0x2D, 1 << 3);
 }
 float shotTot=0;
 int shotCounter=0;
@@ -48,11 +51,11 @@ int isShooting()
    else{
     delay(30);
    }
-   
+   /*
    Serial.print(shotDist);
    Serial.print(" ");
    Serial.println(shotTot/shotCounter/shotConstant);
-   
+   */
    if(shotDist>=distThreshold)
     return 1;
    return 0;
@@ -85,8 +88,8 @@ void accelTick(){
   size_t const DataLength = 6;
   uint32_t data[DataLength] = { 0 };
   
-  WireWriteByte(SensorAccelerometer, 0x34);
-  WireRequestArray(SensorAccelerometer, data, DataLength);
+  WireWriteByte(ShotAccelerometer, 0x34);
+  WireRequestArray(ShotAccelerometer, data, DataLength);
   //checks 3d orientation of 
   uint16_t xi = (data[1] << 8) | data[0];
   uint16_t yi = (data[3] << 8) | data[2];
@@ -108,8 +111,8 @@ void posTick(){
   size_t const DataLength = 6;
   uint32_t data[DataLength] = { 0 };
   
-  WireWriteByte(SensorAccelerometer, 0x32);
-  WireRequestArray(SensorAccelerometer, data, DataLength);
+  WireWriteByte(posAccelerometer, 0x32);
+  WireRequestArray(posAccelerometer, data, DataLength);
 
   uint16_t xi = (data[1] << 8) | data[0];
   uint16_t yi = (data[3] << 8) | data[2];
