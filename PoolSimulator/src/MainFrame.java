@@ -1,3 +1,7 @@
+/*
+ * Wrapper for GamePanel and UserPanel
+ */
+
 import java.awt.*;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
@@ -28,14 +32,18 @@ public class MainFrame extends JFrame implements KeyListener {
 	MainFrame () throws InterruptedException {
 		super("Pool Simulator");
 		
+		// initializing new serial communicator that invokes function
+		// processInput whenever new information is passed from tiva
 		Consumer<String> consumer = (x) -> processInput(x);
 		sc = new SerialCommunicator("COM3", consumer);
 		g = new GamePanel(this);
 		
 		addKeyListener(this);
+		
 		setSize(900, 950);
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
+		// Setting the layout using GridBagLayout
 		Container contentPane = this.getContentPane();
 		contentPane.setLayout(new GridBagLayout());
 		GridBagConstraints c = new GridBagConstraints();
@@ -56,6 +64,7 @@ public class MainFrame extends JFrame implements KeyListener {
 		
 		setVisible(true);
 
+		// Main game loop that handles each game tick
 		int time = 0;
 		while (true) {
 			if (time > SECS_PER_FRAME) {
@@ -70,16 +79,28 @@ public class MainFrame extends JFrame implements KeyListener {
 		}
 	}
 	
+	/**
+	 * 
+	 * @return current player
+	 */
 	public int getCurrentPlayer () {
 		return currentPlayer;
 	}
 	
+	/**
+	 * Switches the active player.
+	 */
 	public void switchTurns () {
 		players[0].toggleIsPlaying();
 		players[1].toggleIsPlaying();
 		currentPlayer ^= 1;
 	}
 	
+	/**
+	 * Adds a ball to a user's sunken balls.
+	 * @param b ball to add
+	 * @param isBreak true if the shot was a break
+	 */
 	public void addBall (Ball b, boolean isBreak) {
 		players[currentPlayer].addBall(b);
 		if (players[currentPlayer].getType() == UserPanel.NONE_ID && !isBreak) {
@@ -88,15 +109,20 @@ public class MainFrame extends JFrame implements KeyListener {
 		}
 		
 		if (!g.hasUnsunkType(players[currentPlayer].getType()))
-			players[currentPlayer].setType(UserPanel.BLACK_ID);
+			players[currentPlayer].setType(UserPanel.EIGHT_ID);
 		if (!g.hasUnsunkType(players[currentPlayer ^ 1].getType()))
-			players[currentPlayer ^ 1].setType(UserPanel.BLACK_ID);
+			players[currentPlayer ^ 1].setType(UserPanel.EIGHT_ID);
 	}
 	
+	/**
+	 * 
+	 * @param b ball to check if scratch
+	 * @return true if hitting Ball b results in a scratch for the active player
+	 */
 	public boolean isScratch (Ball b) {
 		int type = 0;
-		if (b.isBlack())
-			type = UserPanel.BLACK_ID;
+		if (b.isEight())
+			type = UserPanel.EIGHT_ID;
 		else if (b.isStriped())
 			type = UserPanel.STRIPED_ID;
 		else if (b.isSolid())
@@ -104,6 +130,9 @@ public class MainFrame extends JFrame implements KeyListener {
 		return players[currentPlayer].getType() != type && players[currentPlayer].getType() != 0;
 	}
 	
+	/**
+	 * Resets the game and user information.
+	 */
 	public void reset () {
 		players[0].reset();
 		players[1].reset();
@@ -112,6 +141,10 @@ public class MainFrame extends JFrame implements KeyListener {
 		g.reset();
 	}
 	
+	/**
+	 * Processes the string passed by the Tiva and executes the appropriate action.
+	 * @param s string passed by Tiva
+	 */
 	private void processInput (String s) {
 		StringTokenizer st = new StringTokenizer(s);
 		String cmd = st.nextToken();
@@ -128,17 +161,20 @@ public class MainFrame extends JFrame implements KeyListener {
 					g.changeDirectionAngle((val - Math.signum(val) * 0.05) / 50.0);
 				break;
 			case "SHOT":
+				// Can only shoot when the game state is ready for a shot
 				if (g.getState() != GamePanel.GameState.PLAY)
 					break;
 				val = Double.parseDouble(st.nextToken());
 				g.setVelocity(val);
 				break;
 			case "CHANGE_POSITION":
+				// Can only change the position of the cue ball when placing the ball after a scratch
 				if (g.getState() != GamePanel.GameState.PLACING_BALL)
 					break;
 				g.changeCuePosition(Double.parseDouble(st.nextToken()), Double.parseDouble(st.nextToken()));
 				break;
 			case "DROP":
+				// Can only drop the cue ball when placing the ball after a scratch
 				if (g.getState() != GamePanel.GameState.PLACING_BALL)
 					break;
 				if (g.isCuePositionOccupied())

@@ -1,3 +1,7 @@
+/**
+ * Object to communicates (reads and writes data) with the Serial Port.
+ */
+
 import java.util.function.Consumer;
 
 import jssc.*;
@@ -8,12 +12,20 @@ public class SerialCommunicator implements SerialPortEventListener {
 	private boolean receivingMessage = false;
 	private Consumer<String> func;
 	
+	/**
+	 * 
+	 * @param comName name of the COM port
+	 * @param consumer the consumer to invoke when information is read
+	 */
 	public SerialCommunicator (String comName, Consumer<String> consumer) {
 		this.serialPort = new SerialPort("COM3");
 		this.func = consumer;
 		initializePort();
 	}
 	
+	/**
+	 * Initializes the port for reading and writing.
+	 */
 	private void initializePort () {
 		try {
 			serialPort.openPort();
@@ -25,6 +37,10 @@ public class SerialCommunicator implements SerialPortEventListener {
 		}
 	}
 	
+	/**
+	 * 
+	 * @param s string to print
+	 */
 	public void print (String s) {
 		try {
 			serialPort.writeString(s);
@@ -33,6 +49,10 @@ public class SerialCommunicator implements SerialPortEventListener {
 		}
 	}
 	
+	/**
+	 * Appends a new line to s.
+	 * @param s string to print
+	 */
 	public void println (String s) {
 		try {
 			serialPort.writeString(s + "\n");
@@ -41,6 +61,9 @@ public class SerialCommunicator implements SerialPortEventListener {
 		}
 	}
 	
+	/**
+	 * Triggers everytime new information is outputted to the serial port.
+	 */
 	@Override
 	public void serialEvent (SerialPortEvent event) {
 		if(event.isRXCHAR() && event.getEventValue() > 0) {

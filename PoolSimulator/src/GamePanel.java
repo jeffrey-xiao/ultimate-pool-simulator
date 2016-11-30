@@ -1,3 +1,7 @@
+/**
+ * Object representing the main game panel (the pool table).
+ */
+
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics;
@@ -13,6 +17,15 @@ public class GamePanel extends JPanel {
 	 */
 	private static final long serialVersionUID = 1552746400473185110L;
 
+	/**
+	 * Enumeration describing all the different game states:
+	 *  - PLAY: the current player can hit the ball.
+	 *  - NO_SCRATCH_PLAYED: the current player hit the ball and did not scratch
+	 *  - PLAYED: the current player hit the hit
+	 *  - BALL_IN_HAND: the current player has scratched or hit the cue ball in
+	 *  - PLACING_BALL: the current player is placing the ball after a scratch
+	 *  - GAME_OVER: the game has ended
+	 */
 	public enum GameState {
 		PLAY, NO_SCRATCH_PLAYED, CONTINUE_PLAYED, PLAYED, BALL_IN_HAND, PLACING_BALL, GAME_OVER
 	}
@@ -20,6 +33,7 @@ public class GamePanel extends JPanel {
 	private static final Object lock = new Object();
 
 	public static final double METER_TO_PIXEL = (800 / 2.84);
+	public static final double POCKET_WIDTH_RATIO = 1.9;
 	public static final int TABLE_WIDTH = (int) (1.624 * METER_TO_PIXEL);
 	public static final int TABLE_HEIGHT = (int) (3.048 * METER_TO_PIXEL);
 	public static final int PLAY_WIDTH = (int) (1.42 * METER_TO_PIXEL);
@@ -30,6 +44,7 @@ public class GamePanel extends JPanel {
 	public static final double ROLLING_FRICTION = 0.005;
 	public static final double BALL_RESISTITION = 1.0;
 	public static final double WALL_RESISTITION = 0.5;
+	
 	public static final double EPS = 1e-6;
 
 	// labeled from left to right, top to bottom
@@ -44,8 +59,11 @@ public class GamePanel extends JPanel {
 	private MainFrame parent;
 	private GameState state;
 
+	// angle of the direction vector
 	private double angle = Math.PI / 2 * 3;
+	// length of the direction vector
 	private double r = 1 << 30;
+	// if the current shot is a break
 	private boolean isBreak;
 
 	GamePanel (MainFrame parent) {
@@ -55,21 +73,29 @@ public class GamePanel extends JPanel {
 		this.state = GameState.PLAY;
 	}
 
+	/**
+	 * Resets the game and notifies tiva of the current player using serial port.
+	 */
 	public void reset () {
 		initialize();
 		parent.sc.println("<CURRENT_PLAYER " + parent.getCurrentPlayer());
 	}
 
+	/**
+	 * Initializes the game.
+	 */
 	public void initialize () {
 		isBreak = true;
 		state = GameState.PLAY;
 		double widthGap = TABLE_WIDTH - PLAY_WIDTH;
 		double heightGap = TABLE_HEIGHT - PLAY_HEIGHT;
 
-		int radius = (int) (widthGap / 1.9);
+		int radius = (int) (widthGap / POCKET_WIDTH_RATIO);
 		double dx = widthGap / 6 + radius;
 		double dy = heightGap / 6 + radius;
 		double offset = BALL_RADIUS;
+		
+		// Initializing the pockets
 		p[0] = new Ball(dx, dy, radius, Color.BLACK, Color.BLACK);
 		p[1] = new Ball(TABLE_WIDTH - dx, dy, radius, Color.BLACK, Color.BLACK);
 		p[2] = new Ball(dx - offset, TABLE_HEIGHT / 2, radius, Color.BLACK, Color.BLACK);
@@ -77,15 +103,15 @@ public class GamePanel extends JPanel {
 		p[4] = new Ball(dx, TABLE_HEIGHT - dy, radius, Color.BLACK, Color.BLACK);
 		p[5] = new Ball(TABLE_WIDTH - dx, TABLE_HEIGHT - dy, radius, Color.BLACK, Color.BLACK);
 
+		// initializing the borders
 		borders[0] = new Line(p[0].pos.x + radius, heightGap / 2, p[1].pos.x - radius, heightGap / 2);
-
 		borders[1] = new Line(p[0].pos.x, p[0].pos.y + radius, p[2].pos.x + offset, p[2].pos.y - radius * 0.85);
 		borders[2] = new Line(p[1].pos.x, p[1].pos.y + radius, p[3].pos.x - offset, p[3].pos.y - radius * 0.85);
 		borders[3] = new Line(p[2].pos.x + offset, p[2].pos.y + radius * 0.85, p[4].pos.x, p[4].pos.y - radius);
 		borders[4] = new Line(p[3].pos.x - offset, p[3].pos.y + radius * 0.85, p[5].pos.x, p[5].pos.y - radius);
-
 		borders[5] = new Line(p[4].pos.x + radius, TABLE_HEIGHT - heightGap / 2, p[1].pos.x - radius, TABLE_HEIGHT - heightGap / 2);
 
+		// initializing the cue ball
 		double centerX = widthGap / 2 + PLAY_WIDTH / 2;
 		double centerY = heightGap / 2 + PLAY_HEIGHT / 2;
 		b[0] = new Ball(centerX, centerY + PLAY_HEIGHT / 4, BALL_RADIUS, Color.WHITE, Color.WHITE);
@@ -96,6 +122,7 @@ public class GamePanel extends JPanel {
 		dx = Math.sin(30.0 / 180.0 * Math.PI) * BALL_RADIUS * 2;
 		dy = Math.cos(30.0 / 180.0 * Math.PI) * BALL_RADIUS * 2;
 
+		// initializing all the balls
 		b[1] = new Ball(initialPosX, initialPosY, BALL_RADIUS, Color.YELLOW, Color.YELLOW);
 
 		b[2] = new Ball(initialPosX - dx, initialPosY - dy, BALL_RADIUS, Color.BLUE, Color.BLUE);
@@ -118,6 +145,7 @@ public class GamePanel extends JPanel {
 
 	}
 
+	@Override
 	public void paintComponent (Graphics g) {
 		super.paintComponent(g);
 		this.setBorder(BorderFactory.createLineBorder(Color.black));
@@ -149,6 +177,9 @@ public class GamePanel extends JPanel {
 		}
 	}
 
+	/**
+	 * Updating all the balls by one tick and checking and resolving collisions.
+	 */
 	public void update () {
 		synchronized (lock) {
 			main : for (int i = 0; i < b.length; i++) {
@@ -157,8 +188,10 @@ public class GamePanel extends JPanel {
 				if (i == 0 && state == GameState.PLACING_BALL)
 					continue;
 				
+				// updating by one tick
 				b[i].update();
 				
+				// ball has entered a pocket
 				for (int j = 0; j < p.length; j++) {
 					if (b[i].overlap(p[j])) {
 						b[i].isSunk = true;
@@ -183,6 +216,7 @@ public class GamePanel extends JPanel {
 					}
 				}
 				
+				// ball has hit a wall
 				for (int j = 0; j < borders.length; j++) {
 					if (b[i].isIntersecting(borders[j])) {
 						// 0 and 5 are vertical flips
@@ -202,6 +236,7 @@ public class GamePanel extends JPanel {
 					}
 				}
 				
+				// ball has hit another ball
 				for (int j = i + 1; j < b.length; j++) {
 					if (b[j].isSunk)
 						continue;
@@ -218,6 +253,7 @@ public class GamePanel extends JPanel {
 				}
 			}
 
+			// determining the next game state if it is a static system
 			if (isStaticSystem() && state != GameState.PLAY && state != GameState.PLACING_BALL) {
 				if (state == GameState.PLAYED)
 					state = isBreak ? GameState.NO_SCRATCH_PLAYED : GameState.BALL_IN_HAND;
@@ -243,22 +279,43 @@ public class GamePanel extends JPanel {
 		}
 	}
 
+	/**
+	 * 
+	 * @param state state to set
+	 */
 	public void setGameState (GameState state) {
 		this.state = state;
 	}
 	
+	/**
+	 * 
+	 * @return state
+	 */
 	public GameState getState () {
 		return state;
 	}
 	
+	/**
+	 * 
+	 * @param val value to change direction angle by
+	 */
 	public void changeDirectionAngle (double val) {
 		angle += val;
 	}
 
+	/**
+	 * 
+	 * @param dx x difference to change x-coordinate of cue ball by
+	 * @param dy y difference to change y-coordinate of cue ball by
+	 */
 	public void changeCuePosition (double dx, double dy) {
 		b[0].pos = b[0].pos.add(new Vector(dx, dy));
 	}
 	
+	/**
+	 * 
+	 * @return true if cue ball interested with another ball
+	 */
 	public boolean isCuePositionOccupied () {
 		for (int i = 1; i < b.length; i++)
 			if (b[0].isIntersecting(b[i]))
@@ -266,11 +323,19 @@ public class GamePanel extends JPanel {
 		return false;
 	}
 	
+	/**
+	 * 
+	 * @param v velocity to set the cue ball to
+	 */
 	public void setVelocity (double v) {
 		b[0].vel = new Vector(v * Math.cos(angle), v * Math.sin(angle));
 		state = GameState.PLAYED;
 	}
 
+	/**
+	 * 
+	 * @return true if no ball has any translational or angular velocity
+	 */
 	public boolean isStaticSystem () {
 		boolean ret = true;
 		for (int i = 0; i < b.length; i++)
@@ -278,6 +343,11 @@ public class GamePanel extends JPanel {
 		return ret;
 	}
 
+	/**
+	 * 
+	 * @param type type of ball to check
+	 * @return true if there is ball that has not yet been sunk with type
+	 */
 	public boolean hasUnsunkType (int type) {
 		for (int i = 0; i < b.length; i++)
 			if (!b[i].isSunk && b[i].getType() == type)
@@ -285,13 +355,16 @@ public class GamePanel extends JPanel {
 		return false;
 	}
 
+	/**
+	 * Updates the direction vector by stopping at the closest intersection points.
+	 */
 	private void updateDirectionIndicator () {
 		r = 1 << 30;
 		Line v = new Line(b[0].pos.x, b[0].pos.y, b[0].pos.x + Math.cos(angle) * r, b[0].pos.y + r * Math.sin(angle));
 		for (int i = 0; i < borders.length; i++) {
 			Line border = borders[i];
 			Vector pt = v.getIntersectionPoint(border);
-			if (pt != null && v.contains(pt) && border.contains(pt) && pt.dist(v.v1) <= v.getDistance())
+			if (pt != null && v.contains(pt) && border.contains(pt) && pt.getDistance(v.v1) <= v.getDistance())
 				v.v2 = pt;
 		}
 
@@ -300,20 +373,25 @@ public class GamePanel extends JPanel {
 				continue;
 			ArrayList<Vector> pts = v.getIntersectionPoints(b[i]);
 			for (Vector pt : pts)
-				if (pt != null && v.contains(pt) && pt.dist(v.v1) <= v.getDistance())
+				if (pt != null && v.contains(pt) && pt.getDistance(v.v1) <= v.getDistance())
 					v.v2 = pt;
 		}
 
 		for (int i = 0; i < p.length; i++) {
 			ArrayList<Vector> pts = v.getIntersectionPoints(p[i]);
 			for (Vector pt : pts)
-				if (pt != null && v.contains(pt) && pt.dist(v.v1) <= v.getDistance())
+				if (pt != null && v.contains(pt) && pt.getDistance(v.v1) <= v.getDistance())
 					v.v2 = pt;
 		}
 
 		r = v.getDistance();
 	}
 
+	/**
+	 * Handles the collision between two balls.
+	 * @param b1 ball one
+	 * @param b2 ball two
+	 */
 	private void handleCollision (Ball b1, Ball b2) {
 		translate(b1, b2);
 		double nxs = b2.pos.x - b1.pos.x;
@@ -337,6 +415,11 @@ public class GamePanel extends JPanel {
 
 	}
 
+	/**
+	 * Translates two balls so they do not overlap.
+	 * @param b1 ball one
+	 * @param b2 ball two
+	 */
 	private void translate (Ball b1, Ball b2) {
 		double dx = (b1.pos.x - b2.pos.x);
 		double dy = (b1.pos.y - b2.pos.y);
