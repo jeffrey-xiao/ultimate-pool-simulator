@@ -59,16 +59,18 @@ public class Ball {
 		g.drawOval((int) (pos.x - radius), (int) (pos.y - radius), (int)(radius * 2), (int)(radius * 2));
 	}
 
-	public void update (boolean output) {
+	public void update () {
 		if (vel.abs().norm() < GamePanel.EPS) {
 			omega = new Vector(0, 0);
 			return;
 		}
+		
 		pos = pos.add(vel);
 		Vector v = omega.multiply(radius);
 		Vector totalV = v.add(vel);
 		Vector absTotalV = totalV.abs();
 		double theta = Math.atan2(vel.y, vel.x);
+		
 		Vector kineticFriction = new Vector(Math.abs(Math.cos(theta) * GamePanel.FRICTION), Math.abs(Math.sin(theta) * GamePanel.FRICTION));
 		Vector rollingFriction = new Vector(Math.abs(Math.cos(theta) * GamePanel.ROLLING_FRICTION), Math.abs(Math.sin(theta) * GamePanel.ROLLING_FRICTION));
 		

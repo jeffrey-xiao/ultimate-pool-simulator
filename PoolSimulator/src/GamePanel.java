@@ -1,15 +1,12 @@
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
-import java.awt.event.MouseMotionListener;
 import java.util.ArrayList;
 
 import javax.swing.BorderFactory;
 import javax.swing.JPanel;
 
-public class GamePanel extends JPanel implements MouseListener, MouseMotionListener {
+public class GamePanel extends JPanel {
 
 	/**
 	 * 
@@ -17,7 +14,7 @@ public class GamePanel extends JPanel implements MouseListener, MouseMotionListe
 	private static final long serialVersionUID = 1552746400473185110L;
 
 	public enum GameState {
-		PLAY, NO_SCRATCH_PLAYED, CONTINUE_PLAYED, PLAYED, BALL_IN_HAND
+		PLAY, NO_SCRATCH_PLAYED, CONTINUE_PLAYED, PLAYED, BALL_IN_HAND, PLACING_BALL
 	}
 
 	private static final Object lock = new Object();
@@ -28,7 +25,7 @@ public class GamePanel extends JPanel implements MouseListener, MouseMotionListe
 	public static final int PLAY_WIDTH = (int) (1.42 * METER_TO_PIXEL);
 	public static final int PLAY_HEIGHT = (int) (2.84 * METER_TO_PIXEL);
 	public static final int BALL_RADIUS = (int) (0.04615 * METER_TO_PIXEL);
-
+	
 	public static final double FRICTION = 0.0075;
 	public static final double ROLLING_FRICTION = 0.005;
 	public static final double BALL_RESISTITION = 1.0;
@@ -54,8 +51,6 @@ public class GamePanel extends JPanel implements MouseListener, MouseMotionListe
 	GamePanel (MainFrame parent) {
 		setPreferredSize(new Dimension(TABLE_WIDTH, TABLE_HEIGHT));
 		initialize();
-		addMouseListener(this);
-		addMouseMotionListener(this);
 		this.parent = parent;
 		this.state = GameState.PLAY;
 	}
@@ -67,6 +62,7 @@ public class GamePanel extends JPanel implements MouseListener, MouseMotionListe
 	public void initialize () {
 		isBreak = true;
 		state = GameState.PLAY;
+		parent.sc.println("<CURRENT_PLAYER " + parent.getCurrentPlayer());
 		double widthGap = TABLE_WIDTH - PLAY_WIDTH;
 		double heightGap = TABLE_HEIGHT - PLAY_HEIGHT;
 
@@ -139,13 +135,13 @@ public class GamePanel extends JPanel implements MouseListener, MouseMotionListe
 
 		// painting balls
 		for (Ball ball : b) {
-			if (ball.isSunk)
+			if (ball.isSunk) 
 				continue;
 			ball.draw(g);
 		}
 
 		// painting direction
-		if (isStaticSystem()) {
+		if (isStaticSystem() && state != GameState.PLACING_BALL) {
 			updateDirectionIndicator();
 			g.setColor(Color.BLACK);
 			g.drawLine((int) b[0].pos.x, (int) b[0].pos.y, (int) (b[0].pos.x + Math.cos(angle) * r), (int) (b[0].pos.y + r * Math.sin(angle)));
@@ -157,10 +153,11 @@ public class GamePanel extends JPanel implements MouseListener, MouseMotionListe
 			main : for (int i = 0; i < b.length; i++) {
 				if (b[i].isSunk)
 					continue;
-				if (i == 0)
-				b[i].update(true);
-				else
-					b[i].update(false);
+				if (i == 0 && state == GameState.BALL_IN_HAND)
+					continue;
+				
+				b[i].update();
+				
 				for (int j = 0; j < p.length; j++) {
 					if (b[i].overlap(p[j])) {
 						b[i].isSunk = true;
@@ -176,6 +173,7 @@ public class GamePanel extends JPanel implements MouseListener, MouseMotionListe
 							if (!parent.isScratch(b[i]) && (state == GameState.PLAYED || state == GameState.NO_SCRATCH_PLAYED))
 								state = GameState.CONTINUE_PLAYED;
 						}
+						
 						continue main;
 					}
 				}
@@ -198,6 +196,7 @@ public class GamePanel extends JPanel implements MouseListener, MouseMotionListe
 						}
 					}
 				}
+				
 				for (int j = i + 1; j < b.length; j++) {
 					if (b[j].isSunk)
 						continue;
@@ -214,27 +213,43 @@ public class GamePanel extends JPanel implements MouseListener, MouseMotionListe
 				}
 			}
 
-			if (isStaticSystem() && state != GameState.PLAY) {
+			if (isStaticSystem() && state != GameState.PLAY && state != GameState.PLACING_BALL) {
 				if (state == GameState.PLAYED)
 					state = isBreak ? GameState.NO_SCRATCH_PLAYED : GameState.BALL_IN_HAND;
 	
-				if (state == GameState.NO_SCRATCH_PLAYED)
+				if (state == GameState.NO_SCRATCH_PLAYED) {
 					parent.switchTurns();
-				else if (state == GameState.BALL_IN_HAND) {
-					System.out.println("SCRATCHED");
+					parent.sc.println("<CURRENT_PLAYER " + parent.getCurrentPlayer());
+				} else if (state == GameState.BALL_IN_HAND) {
 					parent.switchTurns();
-					// TO-DO:
+					b[0].isSunk = false;
+					b[0].pos = new Vector(TABLE_WIDTH / 2, TABLE_HEIGHT / 2 + PLAY_HEIGHT / 4);
+					state = GameState.PLACING_BALL;
+					parent.sc.println("<CURRENT_PLAYER " + parent.getCurrentPlayer());
+					parent.sc.println("<BALL_IN_HAND");
+					return;
+				} else if (state == GameState.CONTINUE_PLAYED) {
+					parent.sc.println("<CURRENT_PLAYER " + parent.getCurrentPlayer());
 				}
+				
 				state = GameState.PLAY;
 				isBreak = false;
 			}
 		}
 	}
 
+	public GameState getState () {
+		return state;
+	}
+	
 	public void changeDirectionAngle (double val) {
 		angle += val;
 	}
 
+	public void changeCuePosition (double dx, double dy) {
+		b[0].pos = b[0].pos.add(new Vector(dx, dy));
+	}
+	
 	public void setVelocity (double v) {
 		b[0].vel = new Vector(v * Math.cos(angle), v * Math.sin(angle));
 		state = GameState.PLAYED;
@@ -319,34 +334,5 @@ public class GamePanel extends JPanel implements MouseListener, MouseMotionListe
 		b2.pos.x -= dx * im2 / (im1 + im2);
 		b2.pos.y -= dy * im2 / (im1 + im2);
 		repaint();
-	}
-
-	@Override
-	public void mouseClicked (MouseEvent e) {
-		parent.reset();
-	}
-
-	@Override
-	public void mousePressed (MouseEvent e) {
-	}
-
-	@Override
-	public void mouseReleased (MouseEvent e) {
-	}
-
-	@Override
-	public void mouseEntered (MouseEvent e) {
-	}
-
-	@Override
-	public void mouseExited (MouseEvent e) {
-	}
-
-	@Override
-	public void mouseDragged (MouseEvent e) {
-	}
-
-	@Override
-	public void mouseMoved (MouseEvent e) {
 	}
 }

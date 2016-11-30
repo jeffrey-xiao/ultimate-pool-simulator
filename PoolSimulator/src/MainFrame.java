@@ -22,12 +22,14 @@ public class MainFrame extends JFrame implements KeyListener {
 	};
 	private int currentPlayer = 0;
 	private boolean[] keyPressed = new boolean[2];
+	
+	protected SerialCommunicator sc;
 
 	MainFrame () throws InterruptedException {
 		super("Pool Simulator");
 		
 		Consumer<String> consumer = (x) -> processInput(x);
-		new SerialReader("COM3", consumer);
+		sc = new SerialCommunicator("COM3", consumer);
 		
 		addKeyListener(this);
 		setSize(900, 950);
@@ -65,6 +67,10 @@ public class MainFrame extends JFrame implements KeyListener {
 			}
 			Thread.sleep(1);
 		}
+	}
+	
+	public int getCurrentPlayer () {
+		return currentPlayer;
 	}
 	
 	public void switchTurns () {
@@ -123,6 +129,11 @@ public class MainFrame extends JFrame implements KeyListener {
 			case "SHOT":
 				val = Double.parseDouble(st.nextToken());
 				g.setVelocity(val);
+				break;
+			case "CHANGE_POSITION":
+				if (g.getState() != GamePanel.GameState.PLACING_BALL)
+					break;
+				g.changeCuePosition(Double.parseDouble(st.nextToken()), Double.parseDouble(st.nextToken()));
 				break;
 		}
 	}
