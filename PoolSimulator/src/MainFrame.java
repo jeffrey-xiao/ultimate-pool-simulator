@@ -15,7 +15,7 @@ public class MainFrame extends JFrame implements KeyListener {
 	private static final double FRAMES_PER_SEC = 500;
 	private static final double SECS_PER_FRAME = 1000 / FRAMES_PER_SEC;
 
-	private GamePanel g = new GamePanel(this);
+	private GamePanel g;
 	private UserPanel[] players = new UserPanel[] {
 		new UserPanel("Player 1", true), 
 		new UserPanel("Player 2", false)
@@ -23,13 +23,14 @@ public class MainFrame extends JFrame implements KeyListener {
 	private int currentPlayer = 0;
 	private boolean[] keyPressed = new boolean[2];
 	
-	protected SerialCommunicator sc;
+	public SerialCommunicator sc;
 
 	MainFrame () throws InterruptedException {
 		super("Pool Simulator");
 		
 		Consumer<String> consumer = (x) -> processInput(x);
 		sc = new SerialCommunicator("COM3", consumer);
+		g = new GamePanel(this);
 		
 		addKeyListener(this);
 		setSize(900, 950);
@@ -127,6 +128,8 @@ public class MainFrame extends JFrame implements KeyListener {
 					g.changeDirectionAngle((val - Math.signum(val) * 0.05) / 50.0);
 				break;
 			case "SHOT":
+				if (g.getState() != GamePanel.GameState.PLAY)
+					break;
 				val = Double.parseDouble(st.nextToken());
 				g.setVelocity(val);
 				break;
@@ -134,6 +137,13 @@ public class MainFrame extends JFrame implements KeyListener {
 				if (g.getState() != GamePanel.GameState.PLACING_BALL)
 					break;
 				g.changeCuePosition(Double.parseDouble(st.nextToken()), Double.parseDouble(st.nextToken()));
+				break;
+			case "DROP":
+				if (g.getState() != GamePanel.GameState.PLACING_BALL)
+					break;
+				if (g.isCuePositionOccupied())
+					break;
+				g.setGameState(GamePanel.GameState.PLAY);
 				break;
 		}
 	}

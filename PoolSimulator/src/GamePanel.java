@@ -14,7 +14,7 @@ public class GamePanel extends JPanel {
 	private static final long serialVersionUID = 1552746400473185110L;
 
 	public enum GameState {
-		PLAY, NO_SCRATCH_PLAYED, CONTINUE_PLAYED, PLAYED, BALL_IN_HAND, PLACING_BALL
+		PLAY, NO_SCRATCH_PLAYED, CONTINUE_PLAYED, PLAYED, BALL_IN_HAND, PLACING_BALL, GAME_OVER
 	}
 
 	private static final Object lock = new Object();
@@ -57,12 +57,12 @@ public class GamePanel extends JPanel {
 
 	public void reset () {
 		initialize();
+		parent.sc.println("<CURRENT_PLAYER " + parent.getCurrentPlayer());
 	}
 
 	public void initialize () {
 		isBreak = true;
 		state = GameState.PLAY;
-		parent.sc.println("<CURRENT_PLAYER " + parent.getCurrentPlayer());
 		double widthGap = TABLE_WIDTH - PLAY_WIDTH;
 		double heightGap = TABLE_HEIGHT - PLAY_HEIGHT;
 
@@ -134,7 +134,8 @@ public class GamePanel extends JPanel {
 		}
 
 		// painting balls
-		for (Ball ball : b) {
+		for (int i = b.length - 1; i >= 0; i--) {
+			Ball ball = b[i];
 			if (ball.isSunk) 
 				continue;
 			ball.draw(g);
@@ -153,7 +154,7 @@ public class GamePanel extends JPanel {
 			main : for (int i = 0; i < b.length; i++) {
 				if (b[i].isSunk)
 					continue;
-				if (i == 0 && state == GameState.BALL_IN_HAND)
+				if (i == 0 && state == GameState.PLACING_BALL)
 					continue;
 				
 				b[i].update();
@@ -167,7 +168,11 @@ public class GamePanel extends JPanel {
 						if (i == 0)
 							state = GameState.BALL_IN_HAND;
 						else if (i == 8) {
-
+							state = GameState.GAME_OVER;
+							if (!parent.isScratch(b[i]))
+								parent.sc.println("<WINNER " + parent.getCurrentPlayer());
+							else
+								parent.sc.println("<WINNER " + ((parent.getCurrentPlayer() + 1) % 2));
 						} else {
 							parent.addBall(b[i], isBreak);
 							if (!parent.isScratch(b[i]) && (state == GameState.PLAYED || state == GameState.NO_SCRATCH_PLAYED))
@@ -238,6 +243,10 @@ public class GamePanel extends JPanel {
 		}
 	}
 
+	public void setGameState (GameState state) {
+		this.state = state;
+	}
+	
 	public GameState getState () {
 		return state;
 	}
@@ -248,6 +257,13 @@ public class GamePanel extends JPanel {
 
 	public void changeCuePosition (double dx, double dy) {
 		b[0].pos = b[0].pos.add(new Vector(dx, dy));
+	}
+	
+	public boolean isCuePositionOccupied () {
+		for (int i = 1; i < b.length; i++)
+			if (b[0].isIntersecting(b[i]))
+				return true;
+		return false;
 	}
 	
 	public void setVelocity (double v) {

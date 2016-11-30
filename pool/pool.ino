@@ -8,6 +8,7 @@
 #include <Wire.h>
 #include <string.h>
 #include <stdbool.h>
+
 const int buttonPin = PUSH2;     // the number of the pushbutton pin (this is the bottom right button on the tiva and is inverted)
 //PUSH1 doesn't work because of TIVA
 const int ledPin =  GREEN_LED;      // the number of the LED pin
@@ -26,39 +27,59 @@ const uint32_t POTENTIOMETER = PE_3;  //potentiometer
 
 // variables will change:
 int buttonState = 0;         // variable for reading the pushbutton status
-int BTN1State=0;
+
 void WireInit();
 void accelInit();
+void GameUIInit();
 
 void accelTick();
 void posTick();
 void setState();
 void sendShot();
+bool checkBtn1();
+bool checkBtn2();
+
 int isShooting();
 
 void setup() {
   WireInit();
+  GameUIInit();
   OrbitOledInit();
   OrbitOledClear();
   OrbitOledClearBuffer();
   OrbitOledSetFillPattern(OrbitOledGetStdPattern(iptnSolid));
   OrbitOledSetDrawMode(modOledSet);
   // initialize the LEDs pin as an output:
-    
+
   Serial.begin(9600);
   delay(100);
 
   accelInit();
 }
-int gameState=1;
+int gameState = 1;
 
-bool RESET_CHECK=false;
+bool RESET_CHECK = false;
 bool readyToShoot = false;
 bool unSet = true;
-int const SCRATCH=0;
-void loop(){
-  
-  switch(gameState){
+
+
+int const SCRATCH = 0;
+void loop() {
+  /*
+    if(Serial.available()>0){
+    char first = Serial.read();
+    if(first=='<'){
+      String inputString="";
+       while(Serial.available()){
+        char inChar = (char)Serial.read();
+        inputString+=inChar;
+        if(inChar=="\n")
+        break;
+       }
+      Serial.println(inputString);
+    }
+    }*/
+  switch (gameState) {
     case SCRATCH:
       OrbitOledMoveTo(5, 10);
       OrbitOledDrawString("SCRATCH");
@@ -81,58 +102,64 @@ void loop(){
   // check if the pushbutton is pressed.
   // if it is, the buttonState is HIGH:
 
-  if(RESET_CHECK){
-    if(buttonState==LOW)
+  if (RESET_CHECK) {
+    if (buttonState == LOW)
       Serial.print(">RESET_GAME\n");
-      delay(100);
+    delay(100);
   }
-  if (buttonState == LOW) {     
-    // turn LED on:    
-    digitalWrite(Orbit_LD4, HIGH);  
-    RESET_CHECK=true;
+  if (buttonState == LOW) {
+    // turn LED on:
+    digitalWrite(Orbit_LD4, HIGH);
+    RESET_CHECK = true;
     delay(2000);
-  } 
+  }
   else {
     // turn LED off:
-    RESET_CHECK=false;
-    digitalWrite(Orbit_LD4, LOW); 
+    RESET_CHECK = false;
+    digitalWrite(Orbit_LD4, LOW);
   }
 
-  if (digitalRead(Orbit_SLIDE2) == LOW && digitalRead(Orbit_SLIDE1) == HIGH) {     // changing angle
-      digitalWrite(Orbit_LD1, HIGH);  
-      int potential=0;
-      potential = analogRead(POTENTIOMETER);
-      Serial.print(">CHANGE_ANGLE ");
-      Serial.println(potential);
+  if (digitalRead(Orbit_SLIDE2) == LOW) {     // changing angle
+    digitalWrite(Orbit_LD1, HIGH);
+    int potential = 0;
+    potential = analogRead(POTENTIOMETER);
+    Serial.print(">CHANGE_ANGLE ");
+    Serial.print(potential);
+    Serial.print("\n");
   } else {    // turn LED off:
-    digitalWrite(Orbit_LD1, LOW); 
+    digitalWrite(Orbit_LD1, LOW);
   }
-  
+
   if (digitalRead(Orbit_SLIDE2) == HIGH && digitalRead(Orbit_SLIDE1) == LOW) {     // ready to shoot
-    digitalWrite(Orbit_LD2, HIGH); 
-    
-    if(unSet)
+    digitalWrite(Orbit_LD2, HIGH);
+
+    if (unSet)
     {
-      readyToShoot=true;
-      accelTick(); 
+      readyToShoot = true;
+      accelTick();
       setState();
-      unSet=false;
+      unSet = false;
     }
   } else {    // turn LED off:
-    digitalWrite(Orbit_LD2, LOW); 
-    readyToShoot=false;
-    unSet=true;
+    digitalWrite(Orbit_LD2, LOW);
+    readyToShoot = false;
+    unSet = true;
   }
-  if(readyToShoot)
+  if (readyToShoot)
   {
     accelTick();
-    if(isShooting()){
-   //   Serial.println(isShooting());
-      readyToShoot=false;
+    if (isShooting()) {
+      //   Serial.println(isShooting());
+      readyToShoot = false;
       sendShot();
     }
   }
   posTick();
-  delay(100);
-    
+  if (checkBtn1()) {     // ready to shoot
+    Serial.println(">DROP\n");
+  }
+  
+  uiInputTick();
+  delay(10);
+
 }

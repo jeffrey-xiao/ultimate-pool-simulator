@@ -4,16 +4,15 @@ void WireRequestArray(int address, uint8_t* buffer, uint8_t amount);
 void WireWriteRegister(int address, uint8_t reg, uint8_t value);
 void WireWriteByte(int address, uint8_t value);
 
-static float const    SensorMaximumReading= 512.0;
-static float const    SensorMaximumAccel  = 9.81 * 4.0;
 static uint8_t const  SensorAccelerometer = 0x1D;
 static uint32_t const shotThreshold      = 50;
-static  int const     shotSensitivity    = 15;
+static  int const     shotSensitivity    = 12;
 static float const    shotConstant        = 10;
-static float const    posThreshold        = 40;
+static float const    posThreshold        = 30;
+static int            distThreshold       = 50;
 int total=0;
 int n=0;
-int SCALE=1000;
+int SCALE=10;
 int avg=0;
 float x, y, z;
 float setY, setZ;
@@ -47,14 +46,14 @@ int isShooting()
       }
    }
    else{
-    delay(50);
+    delay(30);
    }
-   /*
+   
    Serial.print(shotDist);
    Serial.print(" ");
    Serial.println(shotTot/shotCounter/shotConstant);
-   */
-   if(shotDist>=75)
+   
+   if(shotDist>=distThreshold)
     return 1;
    return 0;
 }
@@ -95,12 +94,14 @@ void accelTick(){
   x = *(int16_t*)(&xi) ;
   y = *(int16_t*)(&yi);
   z = *(int16_t*)(&zi);
+  /*
   Serial.print(x);
   Serial.print(" ");
   Serial.print(y);
   Serial.print(" ");
   Serial.print(z);
   Serial.println(" ");
+  */
 }
 
 void posTick(){
@@ -117,7 +118,7 @@ void posTick(){
   float x1 = *(int16_t*)(&xi);
   float y1 = *(int16_t*)(&yi);
   float z1 = *(int16_t*)(&zi);
-  Serial.print(">SCRATCH ");
+  Serial.print(">CHANGE_POSITION ");
   if(abs(x1)>posThreshold){
     Serial.print((-1)*x1/SCALE);
     Serial.print(" ");
