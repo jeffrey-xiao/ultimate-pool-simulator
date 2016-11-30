@@ -30,7 +30,7 @@ public class GamePanel extends JPanel implements MouseListener, MouseMotionListe
 	public static final int BALL_RADIUS = (int) (0.04615 * METER_TO_PIXEL);
 
 	public static final double FRICTION = 0.0075;
-	public static final double ROLLING_FRICTION = 0.01;
+	public static final double ROLLING_FRICTION = 0.005;
 	public static final double BALL_RESISTITION = 1.0;
 	public static final double WALL_RESISTITION = 0.5;
 	public static final double EPS = 1e-6;

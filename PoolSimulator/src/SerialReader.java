@@ -35,8 +35,9 @@ public class SerialReader implements SerialPortEventListener {
 						receivingMessage = true;
 						msg.setLength(0);
 					} else if (receivingMessage) {
-						if (c == '\r') {
+						if (c == '\n') {
 							receivingMessage = false;
+							System.out.println(msg.toString());
 							func.accept(msg.toString());
 						} else {
 							msg.append((char)c);
