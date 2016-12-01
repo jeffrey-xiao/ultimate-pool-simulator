@@ -8,6 +8,7 @@ import java.awt.FontMetrics;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Polygon;
+import java.awt.RenderingHints;
 import java.util.ArrayList;
 
 import javax.swing.JPanel;
@@ -56,9 +57,14 @@ public class UserPanel extends JPanel {
 	protected void paintComponent (Graphics g) {
 		super.paintComponent(g);
 		
+	    Graphics2D g2 = (Graphics2D)g;
+	    RenderingHints rh = new RenderingHints(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+	    g2.setRenderingHints(rh);
+		
 		// Painting the name of this Player
 		Font f = new Font("Arial", Font.BOLD, 48);
 		Graphics2D g2d = (Graphics2D)g.create();
+		g2d.setRenderingHints(rh);
 		g2d.setFont(f);
 		FontMetrics fm = g2d.getFontMetrics();
 		
@@ -96,8 +102,8 @@ public class UserPanel extends JPanel {
 		
 		// If this Player is the next to play, paint a green triangle beside their name.
 		if (isPlaying) {
-			g.setColor(GamePanel.GREEN);
-			g.fillPolygon(new Polygon(new int[]{25, 25, 60}, new int[]{30, 80, 55}, 3));
+			g2.setColor(GamePanel.GREEN);
+			g2.fillPolygon(new Polygon(new int[]{25, 25, 60}, new int[]{30, 80, 55}, 3));
 		}
 		
 		g2d.dispose();

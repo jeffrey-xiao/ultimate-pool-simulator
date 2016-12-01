@@ -5,6 +5,8 @@
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.RenderingHints;
 import java.util.ArrayList;
 
 import javax.swing.BorderFactory;
@@ -166,18 +168,21 @@ public class GamePanel extends JPanel {
 	@Override
 	public void paintComponent (Graphics g) {
 		super.paintComponent(g);
+	    Graphics2D g2 = (Graphics2D)g;
+	    RenderingHints rh = new RenderingHints(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+	    g2.setRenderingHints(rh);
 		this.setBorder(BorderFactory.createLineBorder(GamePanel.BLACK));
 
 		// painting the table
-		g.setColor(new Color(125, 69, 54));
-		g.fillRect(0, 0, TABLE_WIDTH, TABLE_HEIGHT);
+		g2.setColor(new Color(125, 69, 54));
+		g2.fillRect(0, 0, TABLE_WIDTH, TABLE_HEIGHT);
 
 		// painting the pool area
-		g.setColor(new Color(93, 146, 104));
-		g.fillRect((TABLE_WIDTH - PLAY_WIDTH) / 2 + BALL_RADIUS, (TABLE_HEIGHT - PLAY_HEIGHT) / 2, PLAY_WIDTH - 2 * BALL_RADIUS, PLAY_HEIGHT);
+		g2.setColor(new Color(93, 146, 104));
+		g2.fillRect((TABLE_WIDTH - PLAY_WIDTH) / 2 + BALL_RADIUS, (TABLE_HEIGHT - PLAY_HEIGHT) / 2, PLAY_WIDTH - 2 * BALL_RADIUS, PLAY_HEIGHT);
 
 		// painting the white dots
-		g.setColor(GamePanel.WHITE);
+		g2.setColor(GamePanel.WHITE);
 
 		int widthSection = (TABLE_WIDTH - WIDTH_GAP) / 4;
 		int heightSection = (TABLE_HEIGHT - HEIGHT_GAP) / 8;
@@ -187,13 +192,13 @@ public class GamePanel extends JPanel {
 		int bottomHeight = TABLE_HEIGHT - upperHeight - 2 * DOT_RADIUS;
 
 		for (int i = 1; i <= 3; i++) {
-			g.fillOval(WIDTH_GAP / 2 + widthSection * i - DOT_RADIUS / 2, upperHeight, DOT_RADIUS * 2, DOT_RADIUS * 2);
-			g.fillOval(WIDTH_GAP / 2 + widthSection * i - DOT_RADIUS / 2, bottomHeight, DOT_RADIUS * 2, DOT_RADIUS * 2);
+			g2.fillOval(WIDTH_GAP / 2 + widthSection * i - DOT_RADIUS / 2, upperHeight, DOT_RADIUS * 2, DOT_RADIUS * 2);
+			g2.fillOval(WIDTH_GAP / 2 + widthSection * i - DOT_RADIUS / 2, bottomHeight, DOT_RADIUS * 2, DOT_RADIUS * 2);
 		}
 
 		for (int i = 1; i <= 7; i++) {
-			g.fillOval(leftWidth, HEIGHT_GAP / 2 + heightSection * i - DOT_RADIUS / 2, DOT_RADIUS * 2, DOT_RADIUS * 2);
-			g.fillOval(rightWidth, HEIGHT_GAP / 2 + heightSection * i - DOT_RADIUS / 2, DOT_RADIUS * 2, DOT_RADIUS * 2);
+			g2.fillOval(leftWidth, HEIGHT_GAP / 2 + heightSection * i - DOT_RADIUS / 2, DOT_RADIUS * 2, DOT_RADIUS * 2);
+			g2.fillOval(rightWidth, HEIGHT_GAP / 2 + heightSection * i - DOT_RADIUS / 2, DOT_RADIUS * 2, DOT_RADIUS * 2);
 		}
 
 		// painting pockets
@@ -208,8 +213,8 @@ public class GamePanel extends JPanel {
 
 		// painting border
 		for (Line border : borders) {
-			g.setColor(GamePanel.BLACK);
-			g.drawLine((int) border.v1.x, (int) border.v1.y, (int) border.v2.x, (int) border.v2.y);
+			g2.setColor(GamePanel.BLACK);
+			g2.drawLine((int) border.v1.x, (int) border.v1.y, (int) border.v2.x, (int) border.v2.y);
 		}
 
 		// painting balls
@@ -224,8 +229,8 @@ public class GamePanel extends JPanel {
 		if (isStaticSystem() && state != GameState.PLACING_BALL && state != GameState.GAME_OVER 
 			&& (parent.getCurrentPlayerObject().getType() != UserPanel.EIGHT_ID || isPocketCalled)) {
 			updateDirectionIndicator();
-			g.setColor(GamePanel.BLACK);
-			g.drawLine((int) b[0].pos.x, (int) b[0].pos.y, (int) (b[0].pos.x + Math.cos(angle) * r), (int) (b[0].pos.y + r * Math.sin(angle)));
+			g2.setColor(GamePanel.BLACK);
+			g2.drawLine((int) b[0].pos.x, (int) b[0].pos.y, (int) (b[0].pos.x + Math.cos(angle) * r), (int) (b[0].pos.y + r * Math.sin(angle)));
 		}
 	}
 
