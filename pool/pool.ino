@@ -83,22 +83,18 @@ void loop() {
     prev=printState;
     OrbitOledClear();
   }
-  int prevPocket=0;
   if(gameState==cPOCKET){
     digitalWrite(Orbit_LD1, HIGH);
     int potential = 0;
     potential = analogRead(POTENTIOMETER); 
-    if(prevPocket!=potential/684){
-       OrbitOledClear();
-       prevPocket=potential/684;
-    }
     OrbitOledMoveTo(5, 10);
-    OrbitOledDrawString((char*) "Call Pocket: " + (potential/684+1));
+    OrbitOledDrawString("Call a pocket!");
     OrbitOledUpdate();
-    if(checkBtn1()){     // ready to shoot
-      Serial.print(">CALL_POCKET ");
-      Serial.print(potential/684);
-      Serial.print("\n");
+    Serial.print(">CHANGE_POCKET ");
+    Serial.print(potential/685);
+    Serial.print("\n");
+    if(checkBtn2()){     // ready to shoot
+      Serial.print(">SET_POCKET\n");
       calledPocket();
     } 
   }else{

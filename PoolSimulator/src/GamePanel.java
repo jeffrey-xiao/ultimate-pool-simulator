@@ -257,9 +257,9 @@ public class GamePanel extends JPanel {
 							else
 								parent.sc.println("<WINNER " + ((parent.getCurrentPlayer() + 1) % 2));
 						} else {
-							parent.addBall(b[i], isBreak);
 							if (!parent.isScratch(b[i]) && (state == GameState.PLAYED || state == GameState.NO_SCRATCH_PLAYED))
 								state = GameState.CONTINUE_PLAYED;
+							parent.addBall(b[i], isBreak);
 						}
 
 						continue main;
