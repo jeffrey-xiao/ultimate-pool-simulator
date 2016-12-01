@@ -29,7 +29,7 @@ public class GamePanel extends JPanel {
 	 *  - GAME_OVER: the game has ended
 	 */
 	public enum GameState {
-		PLAY, NO_SCRATCH_PLAYED, CONTINUE_PLAYED, PLAYED, BALL_IN_HAND, PLACING_BALL, GAME_OVER
+		PLAY, NO_SCRATCH_PLAYED, CONTINUE_PLAYED, PLAYED, BALL_IN_HAND, PLACING_BALL, GAME_OVER_WIN, GAME_OVER_LOSS
 	}
 
 	// lock for update function
@@ -85,6 +85,7 @@ public class GamePanel extends JPanel {
 	private boolean isBreak;
 	// called pocket id (only used when current player is hitting the eight ball)
 	private int calledPocketId;
+	// true if the pocket is called
 	private boolean isPocketCalled;
 
 	GamePanel (MainFrame parent) {
@@ -226,7 +227,7 @@ public class GamePanel extends JPanel {
 		}
 
 		// painting direction
-		if (isStaticSystem() && state != GameState.PLACING_BALL && state != GameState.GAME_OVER 
+		if (isStaticSystem() && state != GameState.PLACING_BALL && state != GameState.GAME_OVER_WIN && state != GameState.GAME_OVER_LOSS
 			&& (parent.getCurrentPlayerObject().getType() != UserPanel.EIGHT_ID || isPocketCalled)) {
 			updateDirectionIndicator();
 			g2.setColor(GamePanel.BLACK);
@@ -255,14 +256,18 @@ public class GamePanel extends JPanel {
 						b[i].vel = new Vector(0, 0);
 						b[i].omega = new Vector(0, 0);
 
-						if (i == 0)
+						if (i == 0) {
 							state = GameState.BALL_IN_HAND;
-						else if (i == 8) {
-							state = GameState.GAME_OVER;
+							if (b[8].isSunk)
+								state = GameState.GAME_OVER_LOSS;
+						} else if (i == 8) {
+							state = GameState.GAME_OVER_WIN;
 							if (!parent.isScratch(b[i]) && calledPocketId == j)
-								parent.sc.println("<WINNER " + parent.getCurrentPlayer());
+								state = GameState.GAME_OVER_WIN;
 							else
-								parent.sc.println("<WINNER " + ((parent.getCurrentPlayer() + 1) % 2));
+								state = GameState.GAME_OVER_LOSS;
+							if (b[0].isSunk)
+								state = GameState.GAME_OVER_LOSS;
 						} else {
 							if (!parent.isScratch(b[i]) && (state == GameState.PLAYED || state == GameState.NO_SCRATCH_PLAYED))
 								state = GameState.CONTINUE_PLAYED;
@@ -310,34 +315,40 @@ public class GamePanel extends JPanel {
 				}
 			}
 
-		// determining the next game state if it is a static system
-		if (isStaticSystem() && state != GameState.PLAY && state != GameState.PLACING_BALL && state != GameState.GAME_OVER) {
-			if (state == GameState.PLAYED)
-				state = GameState.BALL_IN_HAND;
-
-			if (state == GameState.NO_SCRATCH_PLAYED) {
-				parent.switchTurns();
-				parent.sc.println("<CURRENT_PLAYER " + parent.getCurrentPlayer());
-			} else if (state == GameState.BALL_IN_HAND) {
-				parent.switchTurns();
-				b[0].isSunk = false;
-				b[0].pos = new Vector(TABLE_WIDTH / 2, TABLE_HEIGHT / 2 + PLAY_HEIGHT / 4);
-				state = GameState.PLACING_BALL;
-				parent.sc.println("<CURRENT_PLAYER " + parent.getCurrentPlayer());
-				parent.sc.println("<BALL_IN_HAND");
-				return;
-			} else if (state == GameState.CONTINUE_PLAYED) {
-				parent.sc.println("<CURRENT_PLAYER " + parent.getCurrentPlayer());
+			// determining the next game state if it is a static system
+			if (isStaticSystem() && state != GameState.PLAY && state != GameState.PLACING_BALL
+				&& state != GameState.GAME_OVER_WIN && state != GameState.GAME_OVER_LOSS) {
+				if (state == GameState.PLAYED)
+					state = GameState.BALL_IN_HAND;
+	
+				if (state == GameState.NO_SCRATCH_PLAYED) {
+					parent.switchTurns();
+					parent.sc.println("<CURRENT_PLAYER " + parent.getCurrentPlayer());
+				} else if (state == GameState.BALL_IN_HAND) {
+					parent.switchTurns();
+					b[0].isSunk = false;
+					b[0].pos = new Vector(TABLE_WIDTH / 2, TABLE_HEIGHT / 2 + PLAY_HEIGHT / 4);
+					state = GameState.PLACING_BALL;
+					parent.sc.println("<CURRENT_PLAYER " + parent.getCurrentPlayer());
+					parent.sc.println("<BALL_IN_HAND");
+					return;
+				} else if (state == GameState.CONTINUE_PLAYED) {
+					parent.sc.println("<CURRENT_PLAYER " + parent.getCurrentPlayer());
+				}
+	
+				state = GameState.PLAY;
+				if (parent.getCurrentPlayerObject().getType() == UserPanel.EIGHT_ID) {
+					parent.sc.println("<CALL_POCKET");
+					calledPocketId = 0;
+					isPocketCalled = false;
+				}
+				isBreak = false;
+			} else if (isStaticSystem() && (state == GameState.GAME_OVER_WIN || state == GameState.GAME_OVER_LOSS)) {
+				if (state == GameState.GAME_OVER_WIN)
+					parent.sc.println("<WINNER " + parent.getCurrentPlayer());
+				else
+					parent.sc.println("<WINNER " + (parent.getCurrentPlayer() ^ 1));
 			}
-
-			state = GameState.PLAY;
-			if (parent.getCurrentPlayerObject().getType() == UserPanel.EIGHT_ID) {
-				parent.sc.println("<CALL_POCKET");
-				calledPocketId = 0;
-				isPocketCalled = false;
-			}
-			isBreak = false;
-		}
 		}
 	}
 

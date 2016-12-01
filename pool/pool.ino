@@ -64,11 +64,13 @@ void gameReset();
 void calledPocket();
 
 void setup() {
-  WireInit();
-  GameUIInit();
-  OrbitOledInit();
-  SerialReaderInit();
   
+  WireInit();
+  
+  OrbitOledInit();
+  GameUIInit();
+  SerialReaderInit();
+ 
 
 
   Serial.begin(9600);

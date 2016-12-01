@@ -21,7 +21,6 @@ static struct InputState
  
 void GameUIInit()
 {
-
   OrbitOledClear();
   OrbitOledClearBuffer();
   OrbitOledSetFillPattern(OrbitOledGetStdPattern(iptnSolid));
