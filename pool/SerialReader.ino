@@ -1,39 +1,70 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdbool.h>
 
 String inputString = ""; // a string to hold incoming data
 boolean stringComplete = false; // whether the string is complete
+char CURRENT_PLAYER='0';
+bool BALL_IN_HAND=false;
 
 void SerialReaderInit() {
   // initialize serial:
   Serial.begin(9600);
   // reserve 200 bytes for the inputString:
-  inputString.reserve(200);
+  inputString.reserve(300);
 }
-
+int getPlayer(){
+  if(CURRENT_PLAYER=='0')
+    return 1;
+  if(CURRENT_PLAYER=='1')
+    return 2;
+}
+bool stringCmp(String a, const char *b){
+  for(int x=0; x<strlen(b); x++){
+    if(a[x]!=b[x])
+    return false;
+  }
+  return true;
+}
+bool isScratch(){
+  return BALL_IN_HAND;
+}
+void setScratch(){
+  BALL_IN_HAND=false;
+}
 void SerialReaderTick() {
   // print the string when a newline arrives:
   if (stringComplete) {
-    Serial.println(inputString);
+    /*
+    Serial.print(inputString);
+    Serial.print("\n");*/
     if(inputString[0]=='<'){
       
       String tokenString = "";
       String input = "";
       int counter=1;
       while(inputString[counter]!=' ' && inputString[counter]!='\n'){
-        
         tokenString+=inputString[counter];
         counter++;
-       
       }
       counter++;
-      while(inputString[counter]!='\n' && inputString[counter-1]!='\n'){
+      while(inputString[counter-1]!='\n' && inputString[counter]!='\n'){
         input+=inputString[counter];
         counter++;
       }
-      Serial.println(tokenString);
-      Serial.println(input);
+      if(stringCmp(tokenString, "CURRENT_PLAYER")){
+        CURRENT_PLAYER=input[0];
+        //Serial.println(CURRENT_PLAYER);
+      }
+      if(stringCmp(tokenString, "BALL_IN_HAND")){
+        BALL_IN_HAND=true;
+        /*
+        if(isScratch())
+          Serial.println(">CHECK");
+          */
+      }
+    //  Serial.println(tokenString);
     }
     // clear the string:
     inputString = "";
@@ -48,7 +79,7 @@ void SerialReaderTick() {
   response. Multiple bytes of data may be available.
 */
 void serialEvent() {
-  while (Serial.available()) {
+  while (Serial.available() && !stringComplete) {
     // get the new byte:
     char inChar = (char)Serial.read(); 
     // add it to the inputString:

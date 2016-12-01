@@ -21,7 +21,7 @@ void GameUIInit()
   for(int i = 0; i < ButtonCount; ++i )
     pinMode(Buttons[i], INPUT);
 }
-static void uiInputTick()
+void uiInputTick()
 {
   for(int i = 0; i < ButtonCount; ++i )
   {

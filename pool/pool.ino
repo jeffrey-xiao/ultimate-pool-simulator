@@ -35,12 +35,18 @@ void SerialReaderInit();
 
 void accelTick();
 void posTick();
+void SerialReaderTick();
+void uiInputTick();
+
 void setState();
 void sendShot();
 bool checkBtn1();
 bool checkBtn2();
 
 int isShooting();
+bool isScratch();
+void setScratch();
+int getPlayer();
 
 void setup() {
   WireInit();
@@ -55,8 +61,8 @@ void setup() {
 
   Serial.begin(9600);
   delay(100);
-
   accelInit();
+
 }
 int gameState = 1;
 
@@ -67,14 +73,8 @@ bool unSet = true;
 
 int const SCRATCH = 3;
 void loop() {
-  
-
+  gameState=getPlayer();
   switch (gameState) {
-    case SCRATCH:
-      OrbitOledMoveTo(5, 10);
-      OrbitOledDrawString("SCRATCH");
-      OrbitOledUpdate();
-      break;
     case 1:
       OrbitOledMoveTo(5, 10);
       OrbitOledDrawString("Player 1");
@@ -109,18 +109,20 @@ void loop() {
     digitalWrite(Orbit_LD4, LOW);
   }
 
-  if (digitalRead(Orbit_SLIDE2) == LOW) {     // changing angle
+  if (digitalRead(Orbit_SLIDE2) == LOW && !isScratch()) {     // changing angle
     digitalWrite(Orbit_LD1, HIGH);
     int potential = 0;
     potential = analogRead(POTENTIOMETER);
+    
     Serial.print(">CHANGE_ANGLE ");
     Serial.print(potential);
     Serial.print("\n");
+    
   } else {    // turn LED off:
     digitalWrite(Orbit_LD1, LOW);
   }
 
-  if (digitalRead(Orbit_SLIDE2) == HIGH && digitalRead(Orbit_SLIDE1) == LOW) {     // ready to shoot
+  if (digitalRead(Orbit_SLIDE2) == HIGH && digitalRead(Orbit_SLIDE1) == LOW && !isScratch()) {     // ready to shoot
     digitalWrite(Orbit_LD2, HIGH);
 
     if (unSet)
@@ -144,13 +146,21 @@ void loop() {
       sendShot();
     }
   }
-  //posTick();
+  
+  if(isScratch()==true)
+  {
+ //   Serial.println("CHECKING");
+    posTick();
+  }
   if (checkBtn1()) {     // ready to shoot
     Serial.println(">DROP\n");
+    setScratch();
   }
   
   uiInputTick();
+  
   delay(10);
+  
   SerialReaderTick();
 
 }

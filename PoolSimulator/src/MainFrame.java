@@ -177,8 +177,11 @@ public class MainFrame extends JFrame implements KeyListener {
 				// Can only drop the cue ball when placing the ball after a scratch
 				if (g.getState() != GamePanel.GameState.PLACING_BALL)
 					break;
-				if (g.isCuePositionOccupied())
-					break;	q 
+				if (g.isCuePositionOccupied()) {
+					sc.println("<BALL_IN_HAND");
+					break; 
+				}
+					
 				g.setGameState(GamePanel.GameState.PLAY);
 				break;
 		}

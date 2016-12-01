@@ -62,13 +62,14 @@ public class SerialCommunicator implements SerialPortEventListener {
 	}
 	
 	/**
-	 * Triggers everytime new information is outputted to the serial port.
+	 * Triggers every time new information is outputted to the serial port.
 	 */
 	@Override
 	public void serialEvent (SerialPortEvent event) {
 		if(event.isRXCHAR() && event.getEventValue() > 0) {
 			try {
 				char[] buffer = serialPort.readString(event.getEventValue()).toCharArray();
+				//System.out.println("BUFFER IS " + new String(buffer).replace('\n', 'x'));
 				for (char c : buffer) {
 					if (c == '>') {
 						receivingMessage = true;
@@ -76,7 +77,7 @@ public class SerialCommunicator implements SerialPortEventListener {
 					} else if (receivingMessage) {
 						if (c == '\n') {
 							receivingMessage = false;
-						//	System.out.println(msg.toString());
+//							System.out.println(msg.toString());
 							func.accept(msg.toString());
 						} else {
 							msg.append((char)c);

@@ -245,7 +245,7 @@ public class GamePanel extends JPanel {
 						if (i == 0) {
 							if (parent.isScratch(b[j]) && state == GameState.PLAYED) {
 								state = GameState.BALL_IN_HAND;
-							} else if (!parent.isScratch(b[j]) && state == GameState.PLAYED) {
+							} else if ((!parent.isScratch(b[j]) && state == GameState.PLAYED) || (isBreak)) {
 								state = GameState.NO_SCRATCH_PLAYED;
 							}
 						}
@@ -256,7 +256,7 @@ public class GamePanel extends JPanel {
 			// determining the next game state if it is a static system
 			if (isStaticSystem() && state != GameState.PLAY && state != GameState.PLACING_BALL) {
 				if (state == GameState.PLAYED)
-					state = isBreak ? GameState.NO_SCRATCH_PLAYED : GameState.BALL_IN_HAND;
+					state = GameState.BALL_IN_HAND;
 	
 				if (state == GameState.NO_SCRATCH_PLAYED) {
 					parent.switchTurns();
