@@ -32,6 +32,16 @@ public class GamePanel extends JPanel {
 
 	private static final Object lock = new Object();
 
+	public static final Color YELLOW = new Color(225, 175, 0);
+	public static final Color BLUE = new Color(1, 78, 146);
+	public static final Color RED = new Color(247, 0, 55);
+	public static final Color PURPLE = new Color(77, 30, 110);
+	public static final Color ORANGE = new Color(255, 97, 36);
+	public static final Color GREEN = new Color(16, 109, 62);
+	public static final Color BROWN = new Color(129, 30, 33);
+	public static final Color BLACK = new Color(20, 20, 20);
+	public static final Color WHITE = new Color(255, 255, 255);
+	
 	public static final double METER_TO_PIXEL = (800 / 2.84);
 	public static final double POCKET_WIDTH_RATIO = 1.9;
 	public static final int TABLE_WIDTH = (int) (1.624 * METER_TO_PIXEL);
@@ -39,9 +49,12 @@ public class GamePanel extends JPanel {
 	public static final int PLAY_WIDTH = (int) (1.42 * METER_TO_PIXEL);
 	public static final int PLAY_HEIGHT = (int) (2.84 * METER_TO_PIXEL);
 	public static final int BALL_RADIUS = (int) (0.04615 * METER_TO_PIXEL);
+	public static final int WIDTH_GAP = (TABLE_WIDTH - PLAY_WIDTH);
+	public static final int HEIGHT_GAP = (TABLE_HEIGHT - PLAY_HEIGHT);
+	public static final int DOT_RADIUS = 4;
 	
 	public static final double FRICTION = 0.0075;
-	public static final double ROLLING_FRICTION = 0.0025;
+	public static final double ROLLING_FRICTION = 0.0035;
 	public static final double BALL_RESISTITION = 1.0;
 	public static final double WALL_RESISTITION = 0.5;
 	
@@ -88,34 +101,32 @@ public class GamePanel extends JPanel {
 	public void initialize () {
 		isBreak = true;
 		state = GameState.PLAY;
-		double widthGap = TABLE_WIDTH - PLAY_WIDTH;
-		double heightGap = TABLE_HEIGHT - PLAY_HEIGHT;
 
-		int radius = (int) (widthGap / POCKET_WIDTH_RATIO);
-		double dx = widthGap / 6 + radius;
-		double dy = heightGap / 6 + radius;
+		int radius = (int) (WIDTH_GAP / POCKET_WIDTH_RATIO);
+		double dx = WIDTH_GAP / 6 + radius;
+		double dy = HEIGHT_GAP / 6 + radius;
 		double offset = BALL_RADIUS;
 		
 		// Initializing the pockets
-		p[0] = new Ball(dx, dy, radius, Color.BLACK, Color.BLACK);
-		p[1] = new Ball(TABLE_WIDTH - dx, dy, radius, Color.BLACK, Color.BLACK);
-		p[2] = new Ball(dx - offset, TABLE_HEIGHT / 2, radius, Color.BLACK, Color.BLACK);
-		p[3] = new Ball(TABLE_WIDTH - dx + offset, TABLE_HEIGHT / 2, radius, Color.BLACK, Color.BLACK);
-		p[4] = new Ball(dx, TABLE_HEIGHT - dy, radius, Color.BLACK, Color.BLACK);
-		p[5] = new Ball(TABLE_WIDTH - dx, TABLE_HEIGHT - dy, radius, Color.BLACK, Color.BLACK);
+		p[0] = new Ball(-1, dx, dy, radius, GamePanel.BLACK, GamePanel.BLACK);
+		p[1] = new Ball(-1, TABLE_WIDTH - dx, dy, radius, GamePanel.BLACK, GamePanel.BLACK);
+		p[2] = new Ball(-1, dx - offset, TABLE_HEIGHT / 2, radius, GamePanel.BLACK, GamePanel.BLACK);
+		p[3] = new Ball(-1, TABLE_WIDTH - dx + offset, TABLE_HEIGHT / 2, radius, GamePanel.BLACK, GamePanel.BLACK);
+		p[4] = new Ball(-1, dx, TABLE_HEIGHT - dy, radius, GamePanel.BLACK, GamePanel.BLACK);
+		p[5] = new Ball(-1, TABLE_WIDTH - dx, TABLE_HEIGHT - dy, radius, GamePanel.BLACK, GamePanel.BLACK);
 
 		// initializing the borders
-		borders[0] = new Line(p[0].pos.x + radius, heightGap / 2, p[1].pos.x - radius, heightGap / 2);
+		borders[0] = new Line(p[0].pos.x + radius, HEIGHT_GAP / 2, p[1].pos.x - radius, HEIGHT_GAP / 2);
 		borders[1] = new Line(p[0].pos.x, p[0].pos.y + radius, p[2].pos.x + offset, p[2].pos.y - radius * 0.85);
 		borders[2] = new Line(p[1].pos.x, p[1].pos.y + radius, p[3].pos.x - offset, p[3].pos.y - radius * 0.85);
 		borders[3] = new Line(p[2].pos.x + offset, p[2].pos.y + radius * 0.85, p[4].pos.x, p[4].pos.y - radius);
 		borders[4] = new Line(p[3].pos.x - offset, p[3].pos.y + radius * 0.85, p[5].pos.x, p[5].pos.y - radius);
-		borders[5] = new Line(p[4].pos.x + radius, TABLE_HEIGHT - heightGap / 2, p[1].pos.x - radius, TABLE_HEIGHT - heightGap / 2);
+		borders[5] = new Line(p[4].pos.x + radius, TABLE_HEIGHT - HEIGHT_GAP / 2, p[1].pos.x - radius, TABLE_HEIGHT - HEIGHT_GAP / 2);
 
 		// initializing the cue ball
-		double centerX = widthGap / 2 + PLAY_WIDTH / 2;
-		double centerY = heightGap / 2 + PLAY_HEIGHT / 2;
-		b[0] = new Ball(centerX, centerY + PLAY_HEIGHT / 4, BALL_RADIUS, Color.WHITE, Color.WHITE);
+		double centerX = WIDTH_GAP / 2 + PLAY_WIDTH / 2;
+		double centerY = HEIGHT_GAP / 2 + PLAY_HEIGHT / 2;
+		b[0] = new Ball(-1, centerX, centerY + PLAY_HEIGHT / 4, BALL_RADIUS, GamePanel.WHITE, GamePanel.WHITE);
 
 		double initialPosX = centerX;
 		double initialPosY = centerY - PLAY_HEIGHT / 4;
@@ -124,33 +135,61 @@ public class GamePanel extends JPanel {
 		dy = Math.cos(30.0 / 180.0 * Math.PI) * BALL_RADIUS * 2;
 
 		// initializing all the balls
-		b[1] = new Ball(initialPosX, initialPosY, BALL_RADIUS, Color.YELLOW, Color.YELLOW);
+		b[1] = new Ball(1, initialPosX, initialPosY, BALL_RADIUS, YELLOW, YELLOW);
 
-		b[2] = new Ball(initialPosX - dx, initialPosY - dy, BALL_RADIUS, Color.BLUE, Color.BLUE);
-		b[3] = new Ball(initialPosX + dx, initialPosY - dy, BALL_RADIUS, Color.RED, Color.RED);
+		b[9] = new Ball(9, initialPosX - dx, initialPosY - dy, BALL_RADIUS, YELLOW, WHITE);
+		b[6] = new Ball(6, initialPosX + dx, initialPosY - dy, BALL_RADIUS, GREEN, GREEN);
 
-		b[4] = new Ball(initialPosX - 2 * dx, initialPosY - 2 * dy, BALL_RADIUS, Color.PINK, Color.PINK);
-		b[8] = new Ball(initialPosX, initialPosY - 2 * dy, BALL_RADIUS, Color.BLACK, Color.BLACK);
-		b[5] = new Ball(initialPosX + 2 * dx, initialPosY - 2 * dy, BALL_RADIUS, Color.ORANGE, Color.ORANGE);
+		b[2] = new Ball(2, initialPosX - 2 * dx, initialPosY - 2 * dy, BALL_RADIUS, BLUE, BLUE);
+		b[8] = new Ball(8, initialPosX + 50, initialPosY - 2 * dy + 500, BALL_RADIUS, BLACK, BLACK);
+		b[14] = new Ball(14, initialPosX + 2 * dx, initialPosY - 2 * dy, BALL_RADIUS, GREEN, WHITE);
 
-		b[6] = new Ball(initialPosX - 3 * dx, initialPosY - 3 * dy, BALL_RADIUS, Color.GREEN, Color.GREEN);
-		b[7] = new Ball(initialPosX - dx, initialPosY - 3 * dy, BALL_RADIUS, Color.LIGHT_GRAY, Color.LIGHT_GRAY);
-		b[9] = new Ball(initialPosX + dx, initialPosY - 3 * dy, BALL_RADIUS, Color.YELLOW, Color.WHITE);
-		b[10] = new Ball(initialPosX + 3 * dx, initialPosY - 3 * dy, BALL_RADIUS, Color.BLUE, Color.WHITE);
+		b[10] = new Ball(10, initialPosX - 3 * dx, initialPosY - 3 * dy, BALL_RADIUS, BLUE, WHITE);
+		b[7] = new Ball(7, initialPosX - dx, initialPosY - 3 * dy, BALL_RADIUS, BROWN, BROWN);
+		b[15] = new Ball(15, initialPosX + dx, initialPosY - 3 * dy, BALL_RADIUS, BROWN, WHITE);
+		b[5] = new Ball(5, initialPosX + 3 * dx, initialPosY - 3 * dy, BALL_RADIUS, ORANGE, ORANGE);
 
-		b[11] = new Ball(initialPosX - 4 * dx, initialPosY - 4 * dy, BALL_RADIUS, Color.RED, Color.WHITE);
-		b[12] = new Ball(initialPosX - 2 * dx, initialPosY - 4 * dy, BALL_RADIUS, Color.PINK, Color.WHITE);
-		b[13] = new Ball(initialPosX, initialPosY - 4 * dy, BALL_RADIUS, Color.ORANGE, Color.WHITE);
-		b[14] = new Ball(initialPosX + 2 * dx, initialPosY - 4 * dy, BALL_RADIUS, Color.GREEN, Color.WHITE);
-		b[15] = new Ball(initialPosX + 4 * dx, initialPosY - 4 * dy, BALL_RADIUS, Color.LIGHT_GRAY, Color.WHITE);
+		b[3] = new Ball(3, initialPosX - 4 * dx, initialPosY - 4 * dy, BALL_RADIUS, RED, RED);
+		b[11] = new Ball(11, initialPosX - 2 * dx, initialPosY - 4 * dy, BALL_RADIUS, RED, WHITE);
+		b[4] = new Ball(4, initialPosX, initialPosY - 4 * dy, BALL_RADIUS, PURPLE, PURPLE);
+		b[12] = new Ball(12, initialPosX + 2 * dx, initialPosY - 4 * dy, BALL_RADIUS, PURPLE, WHITE);
+		b[13] = new Ball(13, initialPosX + 4 * dx, initialPosY - 4 * dy, BALL_RADIUS, ORANGE, WHITE);
 
 	}
 
 	@Override
 	public void paintComponent (Graphics g) {
 		super.paintComponent(g);
-		this.setBorder(BorderFactory.createLineBorder(Color.black));
+		this.setBorder(BorderFactory.createLineBorder(GamePanel.BLACK));
+		
+		// painting the table
+		g.setColor(new Color(125, 69, 54));
+		g.fillRect(0, 0, TABLE_WIDTH, TABLE_HEIGHT);
+		
+		// painting the pool area
+		g.setColor(new Color(93, 146, 104));
+		g.fillRect((TABLE_WIDTH - PLAY_WIDTH) / 2 + BALL_RADIUS, (TABLE_HEIGHT - PLAY_HEIGHT) / 2, PLAY_WIDTH - 2 * BALL_RADIUS, PLAY_HEIGHT);
 
+		// painting the white dots
+		g.setColor(GamePanel.WHITE);
+		
+		int widthSection = (TABLE_WIDTH - WIDTH_GAP) / 4;
+		int heightSection = (TABLE_HEIGHT - HEIGHT_GAP) / 8;
+		int leftWidth = (int)(WIDTH_GAP / 3.5) - DOT_RADIUS;
+		int rightWidth = TABLE_WIDTH - leftWidth - 2 * DOT_RADIUS;
+		int upperHeight = (int)(HEIGHT_GAP / 3.5) - DOT_RADIUS;
+		int bottomHeight = TABLE_HEIGHT - upperHeight - 2 * DOT_RADIUS;
+		
+		for (int i = 1; i <= 3; i++) {
+			g.fillOval(WIDTH_GAP / 2 + widthSection * i - DOT_RADIUS / 2, upperHeight, DOT_RADIUS * 2, DOT_RADIUS * 2);
+			g.fillOval(WIDTH_GAP / 2 + widthSection * i - DOT_RADIUS / 2, bottomHeight, DOT_RADIUS * 2, DOT_RADIUS * 2);
+		}
+		
+		for (int i = 1; i <= 7; i++) {
+			g.fillOval(leftWidth, HEIGHT_GAP / 2 + heightSection * i - DOT_RADIUS / 2, DOT_RADIUS * 2, DOT_RADIUS * 2);
+			g.fillOval(rightWidth, HEIGHT_GAP / 2 + heightSection * i - DOT_RADIUS / 2, DOT_RADIUS * 2, DOT_RADIUS * 2);
+		}
+		
 		// painting pockets
 		for (Ball pocket : p) {
 			pocket.draw(g);
@@ -158,7 +197,7 @@ public class GamePanel extends JPanel {
 
 		// painting border
 		for (Line border : borders) {
-			g.setColor(Color.BLACK);
+			g.setColor(GamePanel.BLACK);
 			g.drawLine((int) border.v1.x, (int) border.v1.y, (int) border.v2.x, (int) border.v2.y);
 		}
 
@@ -171,9 +210,9 @@ public class GamePanel extends JPanel {
 		}
 
 		// painting direction
-		if (isStaticSystem() && state != GameState.PLACING_BALL) {
+		if (isStaticSystem() && state != GameState.PLACING_BALL && state != GameState.GAME_OVER) {
 			updateDirectionIndicator();
-			g.setColor(Color.BLACK);
+			g.setColor(GamePanel.BLACK);
 			g.drawLine((int) b[0].pos.x, (int) b[0].pos.y, (int) (b[0].pos.x + Math.cos(angle) * r), (int) (b[0].pos.y + r * Math.sin(angle)));
 		}
 	}
@@ -255,7 +294,7 @@ public class GamePanel extends JPanel {
 			}
 
 			// determining the next game state if it is a static system
-			if (isStaticSystem() && state != GameState.PLAY && state != GameState.PLACING_BALL) {
+			if (isStaticSystem() && state != GameState.PLAY && state != GameState.PLACING_BALL && state != GameState.GAME_OVER) {
 				if (state == GameState.PLAYED)
 					state = GameState.BALL_IN_HAND;
 	
@@ -263,9 +302,7 @@ public class GamePanel extends JPanel {
 					parent.switchTurns();
 					parent.sc.println("<CURRENT_PLAYER " + parent.getCurrentPlayer());
 				} else if (state == GameState.BALL_IN_HAND) {
-					System.out.println(parent.getState());
 					parent.switchTurns();
-					System.out.println(parent.getState());
 					b[0].isSunk = false;
 					b[0].pos = new Vector(TABLE_WIDTH / 2, TABLE_HEIGHT / 2 + PLAY_HEIGHT / 4);
 					state = GameState.PLACING_BALL;
@@ -363,6 +400,8 @@ public class GamePanel extends JPanel {
 	 * @return true if there is ball that has not yet been sunk with type
 	 */
 	public boolean hasUnsunkType (int type) {
+		if (type == 0)
+			return true;
 		for (int i = 0; i < b.length; i++)
 			if (!b[i].isSunk && b[i].getType() == type)
 				return true;

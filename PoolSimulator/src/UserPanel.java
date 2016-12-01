@@ -2,7 +2,6 @@
  * Object representing the information of each player.
  */
 
-import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.FontMetrics;
@@ -50,7 +49,7 @@ public class UserPanel extends JPanel {
 		this.name = name;
 		this.isPlaying = isPlaying;
 		this.sunkBalls = new ArrayList<Ball>();
-		this.ballType = new Ball(0, 0, 0, Color.BLACK, Color.BLACK);
+		this.ballType = new Ball(-1, 0, 0, 0, GamePanel.BLACK, GamePanel.BLACK);
 	}
 
 	@Override
@@ -66,7 +65,7 @@ public class UserPanel extends JPanel {
 		int x = (getWidth() - fm.stringWidth(this.name)) / 2;
 		int y = (fm.getHeight()) / 2 + fm.getAscent();
 		
-		g2d.setColor(Color.BLACK);
+		g2d.setColor(GamePanel.BLACK);
 		g2d.drawString(this.name, x, y);
 		
 		// Painting the ball associated with this Player
@@ -75,16 +74,16 @@ public class UserPanel extends JPanel {
 		ballType.pos.y = y - fm.getAscent() + ballType.radius;
 		
 		if (type == STRIPED_ID) {
-			ballType.primary = Color.RED;
-			ballType.secondary = Color.WHITE;
+			ballType.primary = GamePanel.RED;
+			ballType.secondary = GamePanel.WHITE;
 			ballType.draw(g);
 		} else if (type == SOLID_ID) {
-			ballType.primary = Color.RED;
-			ballType.secondary = Color.RED;
+			ballType.primary = GamePanel.RED;
+			ballType.secondary = GamePanel.RED;
 			ballType.draw(g);
 		} else if (type == EIGHT_ID) {
-			ballType.primary = Color.BLACK;
-			ballType.secondary = Color.BLACK;
+			ballType.primary = GamePanel.BLACK;
+			ballType.secondary = GamePanel.BLACK;
 			ballType.draw(g);
 		}
 		
@@ -97,7 +96,7 @@ public class UserPanel extends JPanel {
 		
 		// If this Player is the next to play, paint a green triangle beside their name.
 		if (isPlaying) {
-			g.setColor(Color.GREEN);
+			g.setColor(GamePanel.GREEN);
 			g.fillPolygon(new Polygon(new int[]{25, 25, 60}, new int[]{30, 80, 55}, 3));
 		}
 		
