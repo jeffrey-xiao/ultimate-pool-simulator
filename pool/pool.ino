@@ -22,15 +22,21 @@ const int Orbit_SLIDE2 = PA_6;    // Orbit Slide Switch 2
 
 const int Orbit_BTN1 = PD_2;    // Orbit Button 1
 const int Orbit_BTN2 = PE_0;    // Orbit Button 2
+
+const uint32_t POTENTIOMETER = PE_3;  //potentiometer
+
+int buttonState = 0;         // variable for reading the pushbutton status
+
+/*
+ * Different possible game states
+ */
 const int GAME_SHOOT=1;
 const int SCRATCH=2;
 const int WINNER=3;
 const int cPOCKET=4;
-const uint32_t POTENTIOMETER = PE_3;  //potentiometer
-
-// variables will change:
-int buttonState = 0;         // variable for reading the pushbutton status
-
+/*
+ * Required initializing functions
+ */
 void WireInit();
 void accelInit();
 void GameUIInit();
@@ -41,11 +47,14 @@ void posTick();
 void SerialReaderTick();
 void uiInputTick();
 
+/*
+ * The following functions are used the update the game state from
+ * user input.
+ */
 void setState();
 void sendShot();
 bool checkBtn1();
 bool checkBtn2();
-
 int isShooting();
 bool isScratch();
 bool pocket();
@@ -53,37 +62,42 @@ void setScratch();
 int getPlayer();
 void gameReset();
 void calledPocket();
+
 void setup() {
   WireInit();
   GameUIInit();
   OrbitOledInit();
   SerialReaderInit();
-  OrbitOledClear();
-  OrbitOledClearBuffer();
-  OrbitOledSetFillPattern(OrbitOledGetStdPattern(iptnSolid));
-  OrbitOledSetDrawMode(modOledSet);
-  // initialize the LEDs pin as an output:
+  
+
 
   Serial.begin(9600);
   delay(100);
   accelInit();
 
 }
-int printState = 1;
-int gameState =1;
-bool RESET_CHECK = false;
-bool readyToShoot = false;
-bool unSet = true;
 
-int prev=1;
+int printState = 1; //determines what is printed on Tiva screen
+int prev=1;         //checks whether or not you need to refresh Tiva screen
+int gameState =1;   //current game state
+
+bool RESET_CHECK = false;   //used to reset the game (holding bottom right button)
+bool readyToShoot = false;  //used to determine whether or not the user is ready to input a shot
+bool unSet = true;          //used to set shooting conditions
+
+
 
 void loop() {
-  printState=getPlayer();
-  if(printState!=prev){
+  printState=getPlayer();   //checks from SerialReader the current player
+  
+  if(printState!=prev){     //refreshes Tiva screen if necessary
     prev=printState;
     OrbitOledClear();
   }
-  if(gameState==cPOCKET){
+  /*
+   * The following allows user to input a called pocket (top button on Tiva)
+   */
+  if(gameState==cPOCKET){   
     digitalWrite(Orbit_LD1, HIGH);
     int potential = 0;
     potential = analogRead(POTENTIOMETER); 
@@ -98,7 +112,7 @@ void loop() {
       calledPocket();
       OrbitOledClear();
     } 
-  }else{
+  }else{    //Prints the game state (except for during pocket calling which is handled above)
     switch (printState) {
       case 1:
         OrbitOledMoveTo(5, 10);
@@ -122,6 +136,9 @@ void loop() {
         break;    
     }
   }
+  /*
+   * The LED is green for Player 1 and red for Player 2
+   */
   if(printState==1 || printState == 3){
     digitalWrite(GREEN_LED, HIGH);
     digitalWrite(RED_LED, LOW);
@@ -183,7 +200,7 @@ void loop() {
       setState();
       unSet = false;
     }
-  } else if(gameState==GAME_SHOOT){    //:
+  } else if(gameState==GAME_SHOOT){
     digitalWrite(Orbit_LD2, LOW);
     readyToShoot = false;
     unSet = true;
@@ -197,7 +214,10 @@ void loop() {
       sendShot();
     }
   }
-  
+  /*
+   * If one of the player scratches they can turn the Tiva to move the ball on the screen. 
+   * In order to place the ball they press the bottom booster pack button
+   */
   if(gameState==SCRATCH)
   {
     posTick();
@@ -206,7 +226,9 @@ void loop() {
     Serial.println(">DROP\n");
     setScratch();
   }
-  
+  /*
+   * The following sets the game state
+   */
   if(printState>2)
      gameState=WINNER;
   else if(isScratch())

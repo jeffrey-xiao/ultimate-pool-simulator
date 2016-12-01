@@ -1,7 +1,6 @@
 #include <stdbool.h>
 #include <string.h>
 
-
 const uint32_t ButtonCount = 2;
 const uint32_t Buttons[ButtonCount] = { PD_2, PE_0 };
 
@@ -16,8 +15,18 @@ static struct InputState
   struct ButtonState  buttons[2];
 } gameInputState;
 
+/*
+ * Initializes all the input/output from the orbit booster pack
+ */
+ 
 void GameUIInit()
 {
+
+  OrbitOledClear();
+  OrbitOledClearBuffer();
+  OrbitOledSetFillPattern(OrbitOledGetStdPattern(iptnSolid));
+  OrbitOledSetDrawMode(modOledSet);
+  
   pinMode(RED_LED, OUTPUT);      
   pinMode(BLUE_LED, OUTPUT);      
   pinMode(GREEN_LED, OUTPUT);      
@@ -49,6 +58,9 @@ void uiInputTick()
     gameInputState.buttons[i].isRising = (!previousState && gameInputState.buttons[i].state);
   }
 }
+/*
+ * Determines whether or not a button is pressed
+ */
 bool checkBtn1(){
   return gameInputState.buttons[0].isRising;
 }

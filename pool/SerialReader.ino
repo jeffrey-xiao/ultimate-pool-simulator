@@ -5,6 +5,9 @@
 
 String inputString = ""; // a string to hold incoming data
 boolean stringComplete = false; // whether the string is complete
+/*
+ * The following are variables used to store the game state
+ */
 char CURRENT_PLAYER = '0';
 bool BALL_IN_HAND = false;
 bool CALL_POCKET=false;
@@ -13,12 +16,25 @@ int GAME_WINNER =0;
 void SerialReaderInit() {
   // initialize serial:
   Serial.begin(9600);
-  // reserve 200 bytes for the inputString:
+  // reserve 300 bytes for the inputString:
   inputString.reserve(300);
 }
-void calledPocket(){
+
+/*
+ * Function is called when a pocket is properly called and changes the game state.
+ */
+void calledPocket(){ 
   CALL_POCKET=false;
 }
+/*
+ * Function is called after a ball is placed due to a scratch and changes the game state.
+ */
+void setScratch() {
+  BALL_IN_HAND = false;
+}
+/*
+ * Function returns the current state of the game
+ */
 int getPlayer() {
   if (GAME_WINNER)
     return 2+GAME_WINNER;
@@ -27,6 +43,9 @@ int getPlayer() {
   if (CURRENT_PLAYER == '1')
     return 2;
 }
+/*
+ * Compares String with const char *b (returns true or false)
+ */
 bool stringCmp(String a, const char *b) {
   for (int x = 0; x < strlen(b); x++) {
     if (a[x] != b[x])
@@ -34,23 +53,31 @@ bool stringCmp(String a, const char *b) {
   }
   return true;
 }
+/*
+ * Returns whether or not to prompt user to call a pocket
+ */
 bool pocket(){
   return CALL_POCKET;
 }
+/*
+ * Returns whether or not to prompt user to place a ball
+ */
 bool isScratch() {
   return BALL_IN_HAND;
 }
-void setScratch() {
-  BALL_IN_HAND = false;
-}
+/*
+ * Resets game to initial conditions
+ */
 void gameReset(){
   GAME_WINNER= 0;
   CURRENT_PLAYER= '0';
   BALL_IN_HAND = false;
   CALL_POCKET=false;
 }
+/*
+ * The following waits and interprets Serial input from GUI.
+ */
 void SerialReaderTick() {
-  // print the string when a newline arrives:
   if (stringComplete) {
     /*
       Serial.print(inputString);
@@ -101,9 +128,8 @@ void SerialReaderTick() {
 
 /*
   SerialEvent occurs whenever a new data comes in the
-  hardware serial RX. This routine is run between each
-  time loop() runs, so using delay inside loop can delay
-  response. Multiple bytes of data may be available.
+  hardware serial RX.
+  Adds chars to a string until it finds '\n'
 */
 void serialEvent() {
   while (Serial.available() && !stringComplete) {
@@ -111,8 +137,6 @@ void serialEvent() {
     char inChar = (char)Serial.read();
     // add it to the inputString:
     inputString += inChar;
-    // if the incoming character is a newline, set a flag
-    // so the main loop can do something about it:
     if (inChar == '\n') {
       stringComplete = true;
     }
