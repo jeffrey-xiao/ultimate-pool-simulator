@@ -7,12 +7,17 @@ String inputString = ""; // a string to hold incoming data
 boolean stringComplete = false; // whether the string is complete
 char CURRENT_PLAYER = '0';
 bool BALL_IN_HAND = false;
+bool CALL_POCKET=false;
 int GAME_WINNER =0;
+
 void SerialReaderInit() {
   // initialize serial:
   Serial.begin(9600);
   // reserve 200 bytes for the inputString:
   inputString.reserve(300);
+}
+void calledPocket(){
+  CALL_POCKET=false;
 }
 int getPlayer() {
   if (GAME_WINNER)
@@ -29,6 +34,9 @@ bool stringCmp(String a, const char *b) {
   }
   return true;
 }
+bool pocket(){
+  return CALL_POCKET;
+}
 bool isScratch() {
   return BALL_IN_HAND;
 }
@@ -39,6 +47,7 @@ void gameReset(){
   GAME_WINNER= 0;
   CURRENT_PLAYER= '0';
   BALL_IN_HAND = false;
+  CALL_POCKET=false;
 }
 void SerialReaderTick() {
   // print the string when a newline arrives:
@@ -78,6 +87,9 @@ void SerialReaderTick() {
         else {
           GAME_WINNER = 2;
         }
+      }
+      if (stringCmp(tokenString, "CALL_POCKET")){
+        CALL_POCKET=true;
       }
       //  Serial.println(tokenString);
     }

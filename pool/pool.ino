@@ -22,7 +22,10 @@ const int Orbit_SLIDE2 = PA_6;    // Orbit Slide Switch 2
 
 const int Orbit_BTN1 = PD_2;    // Orbit Button 1
 const int Orbit_BTN2 = PE_0;    // Orbit Button 2
-
+const int GAME_SHOOT=1;
+const int SCRATCH=2;
+const int WINNER=3;
+const int cPOCKET=4;
 const uint32_t POTENTIOMETER = PE_3;  //potentiometer
 
 // variables will change:
@@ -45,10 +48,11 @@ bool checkBtn2();
 
 int isShooting();
 bool isScratch();
+bool pocket();
 void setScratch();
 int getPlayer();
 void gameReset();
-
+void calledPocket();
 void setup() {
   WireInit();
   GameUIInit();
@@ -65,8 +69,8 @@ void setup() {
   accelInit();
 
 }
-int gameState = 1;
-
+int printState = 1;
+int gameState =1;
 bool RESET_CHECK = false;
 bool readyToShoot = false;
 bool unSet = true;
@@ -74,39 +78,59 @@ bool unSet = true;
 int prev=1;
 
 void loop() {
-  gameState=getPlayer();
-  if(gameState!=prev){
-    prev=gameState;
+  printState=getPlayer();
+  if(printState!=prev){
+    prev=printState;
     OrbitOledClear();
   }
-  switch (gameState) {
-    case 1:
-      OrbitOledMoveTo(5, 10);
-      OrbitOledDrawString("Player 1");
-      OrbitOledUpdate();
-      break;
-    case 2:
-      OrbitOledMoveTo(5, 10);
-      OrbitOledDrawString("Player 2");
-      OrbitOledUpdate();
-      break;
-    case 3:
-      OrbitOledMoveTo(5, 10);
-      OrbitOledDrawString("Player 1 Wins!");
-      OrbitOledUpdate();
-      break;
-    case 4:
-      OrbitOledMoveTo(5, 10);
-      OrbitOledDrawString("Player 2 Wins!");
-      OrbitOledUpdate();
-      break;    
+  int prevPocket=0;
+  if(gameState==cPOCKET){
+    digitalWrite(Orbit_LD1, HIGH);
+    int potential = 0;
+    potential = analogRead(POTENTIOMETER); 
+    if(prevPocket!=potential/684){
+       OrbitOledClear();
+       prevPocket=potential/684;
+    }
+    OrbitOledMoveTo(5, 10);
+    OrbitOledDrawString((char*) "Call Pocket: " + (potential/684+1));
+    OrbitOledUpdate();
+    if(checkBtn1()){     // ready to shoot
+      Serial.print(">CALL_POCKET ");
+      Serial.print(potential/684);
+      Serial.print("\n");
+      calledPocket();
+    } 
+  }else{
+    switch (printState) {
+      case 1:
+        OrbitOledMoveTo(5, 10);
+        OrbitOledDrawString("Player 1");
+        OrbitOledUpdate();
+        break;
+      case 2:
+        OrbitOledMoveTo(5, 10);
+        OrbitOledDrawString("Player 2");
+        OrbitOledUpdate();
+        break;
+      case 3:
+        OrbitOledMoveTo(5, 10);
+        OrbitOledDrawString("Player 1 Wins!");
+        OrbitOledUpdate();
+        break;
+      case 4:
+        OrbitOledMoveTo(5, 10);
+        OrbitOledDrawString("Player 2 Wins!");
+        OrbitOledUpdate();
+        break;    
+    }
   }
   // read the state of the pushbutton value:
   buttonState = digitalRead(buttonPin);
 
-  // check if the pushbutton is pressed.
-  // if it is, the buttonState is HIGH:
-
+  /*
+   * Holding down the bottom right corner button resets the game
+   */
   if (RESET_CHECK) {
     if (buttonState == LOW){
       Serial.print(">RESET_GAME\n");
@@ -125,8 +149,11 @@ void loop() {
     RESET_CHECK = false;
     digitalWrite(Orbit_LD4, LOW);
   }
+  /*
+   * Changes the angle of the Shot
+   */
 
-  if (digitalRead(Orbit_SLIDE2) == LOW && !isScratch() && gameState<=2) {     // changing angle
+  if (digitalRead(Orbit_SLIDE2) == LOW && gameState==GAME_SHOOT) {    
     digitalWrite(Orbit_LD1, HIGH);
     int potential = 0;
     potential = analogRead(POTENTIOMETER);
@@ -138,8 +165,10 @@ void loop() {
   } else {    // turn LED off:
     digitalWrite(Orbit_LD1, LOW);
   }
-
-  if (digitalRead(Orbit_SLIDE2) == HIGH && digitalRead(Orbit_SLIDE1) == LOW && !isScratch() && gameState<=2) {     // ready to shoot
+  /*
+   * Flipping the left switch "sets" the 2d-table and prompts user for a shot
+   */
+  if (digitalRead(Orbit_SLIDE2) == HIGH && digitalRead(Orbit_SLIDE1) == LOW && gameState==GAME_SHOOT) {     // ready to shoot
     digitalWrite(Orbit_LD2, HIGH);
 
     if (unSet)
@@ -149,7 +178,7 @@ void loop() {
       setState();
       unSet = false;
     }
-  } else if(!isScratch()){    // turn LED off:
+  } else if(gameState==GAME_SHOOT){    //:
     digitalWrite(Orbit_LD2, LOW);
     readyToShoot = false;
     unSet = true;
@@ -164,16 +193,23 @@ void loop() {
     }
   }
   
-  if(isScratch()==true && gameState<=2)
+  if(gameState==SCRATCH)
   {
- //   Serial.println("CHECKING");
     posTick();
   }
-  if (checkBtn1() && gameState<=2) {     // ready to shoot
+  if (checkBtn1() && gameState==SCRATCH){     // ready to shoot
     Serial.println(">DROP\n");
     setScratch();
   }
   
+  if(printState>2)
+     gameState=WINNER;
+  else if(isScratch())
+     gameState=SCRATCH;
+  else if(pocket())
+     gameState=cPOCKET;
+  else
+     gameState=GAME_SHOOT;
   uiInputTick();
   
   delay(10);
