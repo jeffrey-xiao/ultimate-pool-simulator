@@ -149,7 +149,7 @@ void loop() {
       setState();
       unSet = false;
     }
-  } else {    // turn LED off:
+  } else if(!isScratch()){    // turn LED off:
     digitalWrite(Orbit_LD2, LOW);
     readyToShoot = false;
     unSet = true;
