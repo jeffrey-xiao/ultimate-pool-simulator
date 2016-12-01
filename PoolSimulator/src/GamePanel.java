@@ -30,8 +30,10 @@ public class GamePanel extends JPanel {
 		PLAY, NO_SCRATCH_PLAYED, CONTINUE_PLAYED, PLAYED, BALL_IN_HAND, PLACING_BALL, GAME_OVER
 	}
 
+	// lock for update function
 	private static final Object lock = new Object();
 
+	// color declarations
 	public static final Color YELLOW = new Color(225, 175, 0);
 	public static final Color BLUE = new Color(1, 78, 146);
 	public static final Color RED = new Color(247, 0, 55);
@@ -41,7 +43,8 @@ public class GamePanel extends JPanel {
 	public static final Color BROWN = new Color(129, 30, 33);
 	public static final Color BLACK = new Color(20, 20, 20);
 	public static final Color WHITE = new Color(255, 255, 255);
-	
+	public static final Color DARK_RED = new Color(63, 5, 14);
+
 	public static final double METER_TO_PIXEL = (800 / 2.84);
 	public static final double POCKET_WIDTH_RATIO = 1.9;
 	public static final int TABLE_WIDTH = (int) (1.624 * METER_TO_PIXEL);
@@ -52,12 +55,12 @@ public class GamePanel extends JPanel {
 	public static final int WIDTH_GAP = (TABLE_WIDTH - PLAY_WIDTH);
 	public static final int HEIGHT_GAP = (TABLE_HEIGHT - PLAY_HEIGHT);
 	public static final int DOT_RADIUS = 4;
-	
+
 	public static final double FRICTION = 0.0075;
 	public static final double ROLLING_FRICTION = 0.0035;
 	public static final double BALL_RESISTITION = 1.0;
 	public static final double WALL_RESISTITION = 0.5;
-	
+
 	public static final double EPS = 1e-6;
 
 	// labeled from left to right, top to bottom
@@ -78,6 +81,8 @@ public class GamePanel extends JPanel {
 	private double r = 1 << 30;
 	// if the current shot is a break
 	private boolean isBreak;
+	// called pocket id (only used when current player is hitting the eight ball)
+	private int calledPocketId;
 
 	GamePanel (MainFrame parent) {
 		setPreferredSize(new Dimension(TABLE_WIDTH, TABLE_HEIGHT));
@@ -106,7 +111,7 @@ public class GamePanel extends JPanel {
 		double dx = WIDTH_GAP / 6 + radius;
 		double dy = HEIGHT_GAP / 6 + radius;
 		double offset = BALL_RADIUS;
-		
+
 		// Initializing the pockets
 		p[0] = new Ball(-1, dx, dy, radius, GamePanel.BLACK, GamePanel.BLACK);
 		p[1] = new Ball(-1, TABLE_WIDTH - dx, dy, radius, GamePanel.BLACK, GamePanel.BLACK);
@@ -141,7 +146,7 @@ public class GamePanel extends JPanel {
 		b[6] = new Ball(6, initialPosX + dx, initialPosY - dy, BALL_RADIUS, GREEN, GREEN);
 
 		b[2] = new Ball(2, initialPosX - 2 * dx, initialPosY - 2 * dy, BALL_RADIUS, BLUE, BLUE);
-		b[8] = new Ball(8, initialPosX + 50, initialPosY - 2 * dy + 500, BALL_RADIUS, BLACK, BLACK);
+		b[8] = new Ball(8, initialPosX, initialPosY - 2 * dy, BALL_RADIUS, BLACK, BLACK);
 		b[14] = new Ball(14, initialPosX + 2 * dx, initialPosY - 2 * dy, BALL_RADIUS, GREEN, WHITE);
 
 		b[10] = new Ball(10, initialPosX - 3 * dx, initialPosY - 3 * dy, BALL_RADIUS, BLUE, WHITE);
@@ -161,37 +166,42 @@ public class GamePanel extends JPanel {
 	public void paintComponent (Graphics g) {
 		super.paintComponent(g);
 		this.setBorder(BorderFactory.createLineBorder(GamePanel.BLACK));
-		
+
 		// painting the table
 		g.setColor(new Color(125, 69, 54));
 		g.fillRect(0, 0, TABLE_WIDTH, TABLE_HEIGHT);
-		
+
 		// painting the pool area
 		g.setColor(new Color(93, 146, 104));
 		g.fillRect((TABLE_WIDTH - PLAY_WIDTH) / 2 + BALL_RADIUS, (TABLE_HEIGHT - PLAY_HEIGHT) / 2, PLAY_WIDTH - 2 * BALL_RADIUS, PLAY_HEIGHT);
 
 		// painting the white dots
 		g.setColor(GamePanel.WHITE);
-		
+
 		int widthSection = (TABLE_WIDTH - WIDTH_GAP) / 4;
 		int heightSection = (TABLE_HEIGHT - HEIGHT_GAP) / 8;
 		int leftWidth = (int)(WIDTH_GAP / 3.5) - DOT_RADIUS;
 		int rightWidth = TABLE_WIDTH - leftWidth - 2 * DOT_RADIUS;
 		int upperHeight = (int)(HEIGHT_GAP / 3.5) - DOT_RADIUS;
 		int bottomHeight = TABLE_HEIGHT - upperHeight - 2 * DOT_RADIUS;
-		
+
 		for (int i = 1; i <= 3; i++) {
 			g.fillOval(WIDTH_GAP / 2 + widthSection * i - DOT_RADIUS / 2, upperHeight, DOT_RADIUS * 2, DOT_RADIUS * 2);
 			g.fillOval(WIDTH_GAP / 2 + widthSection * i - DOT_RADIUS / 2, bottomHeight, DOT_RADIUS * 2, DOT_RADIUS * 2);
 		}
-		
+
 		for (int i = 1; i <= 7; i++) {
 			g.fillOval(leftWidth, HEIGHT_GAP / 2 + heightSection * i - DOT_RADIUS / 2, DOT_RADIUS * 2, DOT_RADIUS * 2);
 			g.fillOval(rightWidth, HEIGHT_GAP / 2 + heightSection * i - DOT_RADIUS / 2, DOT_RADIUS * 2, DOT_RADIUS * 2);
 		}
-		
+
 		// painting pockets
-		for (Ball pocket : p) {
+		for (int i = 0; i < p.length; i++) {
+			Ball pocket = p[i];
+			if (i == calledPocketId && parent.getCurrentPlayerObject().getType() == UserPanel.EIGHT_ID)
+				pocket.primary = pocket.secondary = DARK_RED;
+			else
+				pocket.primary = pocket.secondary = BLACK;
 			pocket.draw(g);
 		}
 
@@ -227,10 +237,10 @@ public class GamePanel extends JPanel {
 					continue;
 				if (i == 0 && state == GameState.PLACING_BALL)
 					continue;
-				
+
 				// updating by one tick
 				b[i].update();
-				
+
 				// ball has entered a pocket
 				for (int j = 0; j < p.length; j++) {
 					if (b[i].overlap(p[j])) {
@@ -242,7 +252,7 @@ public class GamePanel extends JPanel {
 							state = GameState.BALL_IN_HAND;
 						else if (i == 8) {
 							state = GameState.GAME_OVER;
-							if (!parent.isScratch(b[i]))
+							if (!parent.isScratch(b[i]) && calledPocketId == j)
 								parent.sc.println("<WINNER " + parent.getCurrentPlayer());
 							else
 								parent.sc.println("<WINNER " + ((parent.getCurrentPlayer() + 1) % 2));
@@ -251,11 +261,11 @@ public class GamePanel extends JPanel {
 							if (!parent.isScratch(b[i]) && (state == GameState.PLAYED || state == GameState.NO_SCRATCH_PLAYED))
 								state = GameState.CONTINUE_PLAYED;
 						}
-						
+
 						continue main;
 					}
 				}
-				
+
 				// ball has hit a wall
 				for (int j = 0; j < borders.length; j++) {
 					if (b[i].isIntersecting(borders[j])) {
@@ -275,7 +285,7 @@ public class GamePanel extends JPanel {
 						}
 					}
 				}
-				
+
 				// ball has hit another ball
 				for (int j = i + 1; j < b.length; j++) {
 					if (b[j].isSunk)
@@ -293,30 +303,38 @@ public class GamePanel extends JPanel {
 				}
 			}
 
-			// determining the next game state if it is a static system
-			if (isStaticSystem() && state != GameState.PLAY && state != GameState.PLACING_BALL && state != GameState.GAME_OVER) {
-				if (state == GameState.PLAYED)
-					state = GameState.BALL_IN_HAND;
-	
-				if (state == GameState.NO_SCRATCH_PLAYED) {
-					parent.switchTurns();
-					parent.sc.println("<CURRENT_PLAYER " + parent.getCurrentPlayer());
-				} else if (state == GameState.BALL_IN_HAND) {
-					parent.switchTurns();
-					b[0].isSunk = false;
-					b[0].pos = new Vector(TABLE_WIDTH / 2, TABLE_HEIGHT / 2 + PLAY_HEIGHT / 4);
-					state = GameState.PLACING_BALL;
-					parent.sc.println("<CURRENT_PLAYER " + parent.getCurrentPlayer());
-					parent.sc.println("<BALL_IN_HAND");
-					return;
-				} else if (state == GameState.CONTINUE_PLAYED) {
-					parent.sc.println("<CURRENT_PLAYER " + parent.getCurrentPlayer());
-				}
-				
-				state = GameState.PLAY;
-				isBreak = false;
+		// determining the next game state if it is a static system
+		if (isStaticSystem() && state != GameState.PLAY && state != GameState.PLACING_BALL && state != GameState.GAME_OVER) {
+			if (state == GameState.PLAYED)
+				state = GameState.BALL_IN_HAND;
+
+			if (state == GameState.NO_SCRATCH_PLAYED) {
+				parent.switchTurns();
+				parent.sc.println("<CURRENT_PLAYER " + parent.getCurrentPlayer());
+			} else if (state == GameState.BALL_IN_HAND) {
+				parent.switchTurns();
+				b[0].isSunk = false;
+				b[0].pos = new Vector(TABLE_WIDTH / 2, TABLE_HEIGHT / 2 + PLAY_HEIGHT / 4);
+				state = GameState.PLACING_BALL;
+				parent.sc.println("<CURRENT_PLAYER " + parent.getCurrentPlayer());
+				parent.sc.println("<BALL_IN_HAND");
+				return;
+			} else if (state == GameState.CONTINUE_PLAYED) {
+				parent.sc.println("<CURRENT_PLAYER " + parent.getCurrentPlayer());
 			}
+
+			state = GameState.PLAY;
+			if (parent.getCurrentPlayerObject().getType() == UserPanel.EIGHT_ID) {
+				parent.sc.println("<CALL_POCKET");
+				calledPocketId = 0;
+			}
+			isBreak = false;
 		}
+		}
+	}
+
+	public void setCalledPocketId (int calledPocketId) {
+		this.calledPocketId = calledPocketId;
 	}
 
 	/**
@@ -326,7 +344,7 @@ public class GamePanel extends JPanel {
 	public void setGameState (GameState state) {
 		this.state = state;
 	}
-	
+
 	/**
 	 * 
 	 * @return state
@@ -334,7 +352,7 @@ public class GamePanel extends JPanel {
 	public GameState getState () {
 		return state;
 	}
-	
+
 	/**
 	 * 
 	 * @param val value to change direction angle by
@@ -356,13 +374,13 @@ public class GamePanel extends JPanel {
 			b[0].pos.x = widthGap + b[0].radius + BALL_RADIUS;
 		else if (b[0].pos.x + b[0].radius > TABLE_WIDTH - widthGap - BALL_RADIUS)
 			b[0].pos.x = TABLE_WIDTH - widthGap - b[0].radius - BALL_RADIUS;
-		
+
 		if (b[0].pos.y - b[0].radius < heightGap)
 			b[0].pos.y = heightGap + b[0].radius;
 		else if (b[0].pos.y + b[0].radius > TABLE_HEIGHT - heightGap)
 			b[0].pos.y = TABLE_HEIGHT - heightGap - b[0].radius;
 	}
-	
+
 	/**
 	 * 
 	 * @return true if cue ball interested with another ball
@@ -373,7 +391,7 @@ public class GamePanel extends JPanel {
 				return true;
 		return false;
 	}
-	
+
 	/**
 	 * 
 	 * @param v velocity to set the cue ball to

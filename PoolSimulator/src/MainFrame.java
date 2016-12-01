@@ -87,6 +87,14 @@ public class MainFrame extends JFrame implements KeyListener {
 	}
 	
 	/**
+	 * 
+	 * @return current player object
+	 */
+	public UserPanel getCurrentPlayerObject () {
+		return players[0].isPlaying() ? players[0] : players[1];
+	}
+	
+	/**
 	 * Switches the active player.
 	 */
 	public void switchTurns () {
@@ -155,7 +163,7 @@ public class MainFrame extends JFrame implements KeyListener {
 				reset();
 				break;
 			case "CHANGE_ANGLE":
-				val = Integer.parseInt(st.nextToken());
+				val = Double.parseDouble(st.nextToken());
 				val = (val - 2048) / 2048.0;
 				if (Math.abs(val) > 0.05)
 					g.changeDirectionAngle((val - Math.signum(val) * 0.05) / 50.0);
@@ -183,6 +191,12 @@ public class MainFrame extends JFrame implements KeyListener {
 				}
 					
 				g.setGameState(GamePanel.GameState.PLAY);
+				break;
+			case "CALL_POCKET":
+				int pocket = Integer.parseInt(st.nextToken());
+				if (getCurrentPlayerObject().getType() != UserPanel.EIGHT_ID)
+					break;
+				g.setCalledPocketId(pocket);
 				break;
 		}
 	}
