@@ -83,6 +83,7 @@ public class GamePanel extends JPanel {
 	private boolean isBreak;
 	// called pocket id (only used when current player is hitting the eight ball)
 	private int calledPocketId;
+	private boolean isPocketCalled;
 
 	GamePanel (MainFrame parent) {
 		setPreferredSize(new Dimension(TABLE_WIDTH, TABLE_HEIGHT));
@@ -220,7 +221,8 @@ public class GamePanel extends JPanel {
 		}
 
 		// painting direction
-		if (isStaticSystem() && state != GameState.PLACING_BALL && state != GameState.GAME_OVER) {
+		if (isStaticSystem() && state != GameState.PLACING_BALL && state != GameState.GAME_OVER 
+			&& (parent.getCurrentPlayerObject().getType() != UserPanel.EIGHT_ID || isPocketCalled)) {
 			updateDirectionIndicator();
 			g.setColor(GamePanel.BLACK);
 			g.drawLine((int) b[0].pos.x, (int) b[0].pos.y, (int) (b[0].pos.x + Math.cos(angle) * r), (int) (b[0].pos.y + r * Math.sin(angle)));
@@ -327,6 +329,7 @@ public class GamePanel extends JPanel {
 			if (parent.getCurrentPlayerObject().getType() == UserPanel.EIGHT_ID) {
 				parent.sc.println("<CALL_POCKET");
 				calledPocketId = 0;
+				isPocketCalled = false;
 			}
 			isBreak = false;
 		}
@@ -337,6 +340,14 @@ public class GamePanel extends JPanel {
 		this.calledPocketId = calledPocketId;
 	}
 
+	/**
+	 * 
+	 * @param isPocketCalled isPockedCalled to set 
+	 */
+	public void setIsPocketCalled (boolean isPocketCalled) {
+		this.isPocketCalled = isPocketCalled;
+	}
+	
 	/**
 	 * 
 	 * @param state state to set

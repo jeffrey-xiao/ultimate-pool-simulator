@@ -192,11 +192,14 @@ public class MainFrame extends JFrame implements KeyListener {
 					
 				g.setGameState(GamePanel.GameState.PLAY);
 				break;
-			case "CALL_POCKET":
+			case "CHANGE_POCKET":
 				int pocket = Integer.parseInt(st.nextToken());
 				if (getCurrentPlayerObject().getType() != UserPanel.EIGHT_ID)
 					break;
 				g.setCalledPocketId(pocket);
+				break;
+			case "SET_POCKET:":
+				g.setIsPocketCalled(true);
 				break;
 		}
 	}
