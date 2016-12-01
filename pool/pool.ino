@@ -96,6 +96,7 @@ void loop() {
     if(checkBtn2()){     // ready to shoot
       Serial.print(">SET_POCKET\n");
       calledPocket();
+      OrbitOledClear();
     } 
   }else{
     switch (printState) {

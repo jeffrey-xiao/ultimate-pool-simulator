@@ -198,7 +198,7 @@ public class MainFrame extends JFrame implements KeyListener {
 					break;
 				g.setCalledPocketId(pocket);
 				break;
-			case "SET_POCKET:":
+			case "SET_POCKET":
 				g.setIsPocketCalled(true);
 				break;
 		}
