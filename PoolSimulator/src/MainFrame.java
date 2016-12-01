@@ -29,7 +29,7 @@ public class MainFrame extends JFrame implements KeyListener {
 	public SerialCommunicator sc;
 
 	MainFrame () throws InterruptedException {
-		super("Pool Simulator");
+		super("\uD83D\uDD25\uD83D\uDD25\uD83D\uDD25 ULTIMATE POOL SIMULATOR 2K17 \uD83D\uDD25\uD83D\uDD25\uD83D\uDD25");
 		
 		// initializing new serial communicator that invokes function
 		// processInput whenever new information is passed from tiva
