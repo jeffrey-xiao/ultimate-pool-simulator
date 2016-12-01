@@ -121,6 +121,14 @@ void loop() {
         break;    
     }
   }
+  if(printState==1 || printState == 3){
+    digitalWrite(GREEN_LED, HIGH);
+    digitalWrite(RED_LED, LOW);
+  }
+  else{
+    digitalWrite(GREEN_LED, LOW);
+    digitalWrite(RED_LED, HIGH);
+  }
   // read the state of the pushbutton value:
   buttonState = digitalRead(buttonPin);
 

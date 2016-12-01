@@ -243,9 +243,9 @@ public class GamePanel extends JPanel {
 				// updating by one tick
 				b[i].update();
 
-				// ball has entered a pocket
+				// ball has entered a pocket/out of bounds
 				for (int j = 0; j < p.length; j++) {
-					if (b[i].overlap(p[j])) {
+					if (b[i].overlap(p[j]) || b[i].pos.x < 0 || b[i].pos.x > TABLE_WIDTH || b[i].pos.y < 0 || b[i].pos.y > TABLE_HEIGHT) {
 						b[i].isSunk = true;
 						b[i].vel = new Vector(0, 0);
 						b[i].omega = new Vector(0, 0);
