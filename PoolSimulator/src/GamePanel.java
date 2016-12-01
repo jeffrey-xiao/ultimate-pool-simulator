@@ -41,7 +41,7 @@ public class GamePanel extends JPanel {
 	public static final int BALL_RADIUS = (int) (0.04615 * METER_TO_PIXEL);
 	
 	public static final double FRICTION = 0.0075;
-	public static final double ROLLING_FRICTION = 0.005;
+	public static final double ROLLING_FRICTION = 0.0025;
 	public static final double BALL_RESISTITION = 1.0;
 	public static final double WALL_RESISTITION = 0.5;
 	
@@ -74,9 +74,10 @@ public class GamePanel extends JPanel {
 	}
 
 	/**
-	 * Resets the game and notifies tiva of the current player using serial port.
+	 * Resets the game and notifies Tiva of the current player using serial port.
 	 */
 	public void reset () {
+		state = GameState.PLAY;
 		initialize();
 		parent.sc.println("<CURRENT_PLAYER " + parent.getCurrentPlayer());
 	}
@@ -262,7 +263,9 @@ public class GamePanel extends JPanel {
 					parent.switchTurns();
 					parent.sc.println("<CURRENT_PLAYER " + parent.getCurrentPlayer());
 				} else if (state == GameState.BALL_IN_HAND) {
+					System.out.println(parent.getState());
 					parent.switchTurns();
+					System.out.println(parent.getState());
 					b[0].isSunk = false;
 					b[0].pos = new Vector(TABLE_WIDTH / 2, TABLE_HEIGHT / 2 + PLAY_HEIGHT / 4);
 					state = GameState.PLACING_BALL;
@@ -310,6 +313,17 @@ public class GamePanel extends JPanel {
 	 */
 	public void changeCuePosition (double dx, double dy) {
 		b[0].pos = b[0].pos.add(new Vector(dx, dy));
+		double widthGap = (TABLE_WIDTH - PLAY_WIDTH) / 2;
+		double heightGap = (TABLE_HEIGHT - PLAY_HEIGHT) / 2;
+		if (b[0].pos.x - b[0].radius < widthGap + BALL_RADIUS)
+			b[0].pos.x = widthGap + b[0].radius + BALL_RADIUS;
+		else if (b[0].pos.x + b[0].radius > TABLE_WIDTH - widthGap - BALL_RADIUS)
+			b[0].pos.x = TABLE_WIDTH - widthGap - b[0].radius - BALL_RADIUS;
+		
+		if (b[0].pos.y - b[0].radius < heightGap)
+			b[0].pos.y = heightGap + b[0].radius;
+		else if (b[0].pos.y + b[0].radius > TABLE_HEIGHT - heightGap)
+			b[0].pos.y = TABLE_HEIGHT - heightGap - b[0].radius;
 	}
 	
 	/**

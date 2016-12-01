@@ -121,6 +121,14 @@ public class UserPanel extends JPanel {
 	}
 	
 	/**
+	 * 
+	 * @return true if this Player is playing
+	 */
+	public boolean isPlaying () {
+		return isPlaying;
+	}
+	
+	/**
 	 * Toggles isPlaying.
 	 */
 	public void toggleIsPlaying () {

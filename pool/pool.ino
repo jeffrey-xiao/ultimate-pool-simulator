@@ -47,6 +47,7 @@ int isShooting();
 bool isScratch();
 void setScratch();
 int getPlayer();
+void gameReset();
 
 void setup() {
   WireInit();
@@ -70,10 +71,14 @@ bool RESET_CHECK = false;
 bool readyToShoot = false;
 bool unSet = true;
 
+int prev=1;
 
-int const SCRATCH = 3;
 void loop() {
   gameState=getPlayer();
+  if(gameState!=prev){
+    prev=gameState;
+    OrbitOledClear();
+  }
   switch (gameState) {
     case 1:
       OrbitOledMoveTo(5, 10);
@@ -85,6 +90,16 @@ void loop() {
       OrbitOledDrawString("Player 2");
       OrbitOledUpdate();
       break;
+    case 3:
+      OrbitOledMoveTo(5, 10);
+      OrbitOledDrawString("Player 1 Wins!");
+      OrbitOledUpdate();
+      break;
+    case 4:
+      OrbitOledMoveTo(5, 10);
+      OrbitOledDrawString("Player 2 Wins!");
+      OrbitOledUpdate();
+      break;    
   }
   // read the state of the pushbutton value:
   buttonState = digitalRead(buttonPin);
@@ -93,8 +108,10 @@ void loop() {
   // if it is, the buttonState is HIGH:
 
   if (RESET_CHECK) {
-    if (buttonState == LOW)
+    if (buttonState == LOW){
       Serial.print(">RESET_GAME\n");
+      gameReset();
+    }
     delay(100);
   }
   if (buttonState == LOW) {
@@ -109,7 +126,7 @@ void loop() {
     digitalWrite(Orbit_LD4, LOW);
   }
 
-  if (digitalRead(Orbit_SLIDE2) == LOW && !isScratch()) {     // changing angle
+  if (digitalRead(Orbit_SLIDE2) == LOW && !isScratch() && gameState<=2) {     // changing angle
     digitalWrite(Orbit_LD1, HIGH);
     int potential = 0;
     potential = analogRead(POTENTIOMETER);
@@ -122,7 +139,7 @@ void loop() {
     digitalWrite(Orbit_LD1, LOW);
   }
 
-  if (digitalRead(Orbit_SLIDE2) == HIGH && digitalRead(Orbit_SLIDE1) == LOW && !isScratch()) {     // ready to shoot
+  if (digitalRead(Orbit_SLIDE2) == HIGH && digitalRead(Orbit_SLIDE1) == LOW && !isScratch() && gameState<=2) {     // ready to shoot
     digitalWrite(Orbit_LD2, HIGH);
 
     if (unSet)
@@ -147,12 +164,12 @@ void loop() {
     }
   }
   
-  if(isScratch()==true)
+  if(isScratch()==true && gameState<=2)
   {
  //   Serial.println("CHECKING");
     posTick();
   }
-  if (checkBtn1()) {     // ready to shoot
+  if (checkBtn1() && gameState<=2) {     // ready to shoot
     Serial.println(">DROP\n");
     setScratch();
   }
@@ -162,5 +179,5 @@ void loop() {
   delay(10);
   
   SerialReaderTick();
-
+  
 }

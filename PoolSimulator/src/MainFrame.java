@@ -24,7 +24,6 @@ public class MainFrame extends JFrame implements KeyListener {
 		new UserPanel("Player 1", true), 
 		new UserPanel("Player 2", false)
 	};
-	private int currentPlayer = 0;
 	private boolean[] keyPressed = new boolean[2];
 	
 	public SerialCommunicator sc;
@@ -84,7 +83,7 @@ public class MainFrame extends JFrame implements KeyListener {
 	 * @return current player
 	 */
 	public int getCurrentPlayer () {
-		return currentPlayer;
+		return players[0].isPlaying() ? 0 : 1;
 	}
 	
 	/**
@@ -93,7 +92,6 @@ public class MainFrame extends JFrame implements KeyListener {
 	public void switchTurns () {
 		players[0].toggleIsPlaying();
 		players[1].toggleIsPlaying();
-		currentPlayer ^= 1;
 	}
 	
 	/**
@@ -102,16 +100,16 @@ public class MainFrame extends JFrame implements KeyListener {
 	 * @param isBreak true if the shot was a break
 	 */
 	public void addBall (Ball b, boolean isBreak) {
-		players[currentPlayer].addBall(b);
-		if (players[currentPlayer].getType() == UserPanel.NONE_ID && !isBreak) {
-			players[currentPlayer].setType(b.getType());
-			players[currentPlayer ^ 1].setType(b.getType() == UserPanel.STRIPED_ID ? UserPanel.SOLID_ID : UserPanel.STRIPED_ID);
+		players[getCurrentPlayer()].addBall(b);
+		if (players[getCurrentPlayer()].getType() == UserPanel.NONE_ID && !isBreak) {
+			players[getCurrentPlayer()].setType(b.getType());
+			players[getCurrentPlayer() ^ 1].setType(b.getType() == UserPanel.STRIPED_ID ? UserPanel.SOLID_ID : UserPanel.STRIPED_ID);
 		}
 		
-		if (!g.hasUnsunkType(players[currentPlayer].getType()))
-			players[currentPlayer].setType(UserPanel.EIGHT_ID);
-		if (!g.hasUnsunkType(players[currentPlayer ^ 1].getType()))
-			players[currentPlayer ^ 1].setType(UserPanel.EIGHT_ID);
+		if (!g.hasUnsunkType(players[getCurrentPlayer()].getType()))
+			players[getCurrentPlayer()].setType(UserPanel.EIGHT_ID);
+		if (!g.hasUnsunkType(players[getCurrentPlayer() ^ 1].getType()))
+			players[getCurrentPlayer() ^ 1].setType(UserPanel.EIGHT_ID);
 	}
 	
 	/**
@@ -120,6 +118,8 @@ public class MainFrame extends JFrame implements KeyListener {
 	 * @return true if hitting Ball b results in a scratch for the active player
 	 */
 	public boolean isScratch (Ball b) {
+		if (b.isEight() && players[getCurrentPlayer()].getType() == UserPanel.NONE_ID)
+			return true;
 		int type = 0;
 		if (b.isEight())
 			type = UserPanel.EIGHT_ID;
@@ -127,7 +127,7 @@ public class MainFrame extends JFrame implements KeyListener {
 			type = UserPanel.STRIPED_ID;
 		else if (b.isSolid())
 			type = UserPanel.SOLID_ID;
-		return players[currentPlayer].getType() != type && players[currentPlayer].getType() != 0;
+		return players[getCurrentPlayer()].getType() != type && players[getCurrentPlayer()].getType() != 0;
 	}
 	
 	/**
