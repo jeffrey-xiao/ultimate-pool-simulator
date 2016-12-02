@@ -163,15 +163,14 @@ public class GamePanel extends JPanel {
 		b[4] = new Ball(4, initialPosX, initialPosY - 4 * dy, BALL_RADIUS, PURPLE, PURPLE);
 		b[12] = new Ball(12, initialPosX + 2 * dx, initialPosY - 4 * dy, BALL_RADIUS, PURPLE, WHITE);
 		b[13] = new Ball(13, initialPosX + 4 * dx, initialPosY - 4 * dy, BALL_RADIUS, ORANGE, WHITE);
-
 	}
 
 	@Override
 	public void paintComponent (Graphics g) {
 		super.paintComponent(g);
-	    Graphics2D g2 = (Graphics2D)g;
-	    RenderingHints rh = new RenderingHints(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-	    g2.setRenderingHints(rh);
+		Graphics2D g2 = (Graphics2D)g;
+		RenderingHints rh = new RenderingHints(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+		g2.setRenderingHints(rh);
 		this.setBorder(BorderFactory.createLineBorder(GamePanel.BLACK));
 
 		// painting the table
@@ -228,7 +227,7 @@ public class GamePanel extends JPanel {
 
 		// painting direction
 		if (isStaticSystem() && state != GameState.PLACING_BALL && state != GameState.GAME_OVER_WIN && state != GameState.GAME_OVER_LOSS
-			&& (parent.getCurrentPlayerObject().getType() != UserPanel.EIGHT_ID || isPocketCalled)) {
+				&& (parent.getCurrentPlayerObject().getType() != UserPanel.EIGHT_ID || isPocketCalled)) {
 			updateDirectionIndicator();
 			g2.setColor(GamePanel.BLACK);
 			g2.drawLine((int) b[0].pos.x, (int) b[0].pos.y, (int) (b[0].pos.x + Math.cos(angle) * r), (int) (b[0].pos.y + r * Math.sin(angle)));
@@ -315,40 +314,40 @@ public class GamePanel extends JPanel {
 				}
 			}
 
-			// determining the next game state if it is a static system
-			if (isStaticSystem() && state != GameState.PLAY && state != GameState.PLACING_BALL
+		// determining the next game state if it is a static system
+		if (isStaticSystem() && state != GameState.PLAY && state != GameState.PLACING_BALL
 				&& state != GameState.GAME_OVER_WIN && state != GameState.GAME_OVER_LOSS) {
-				if (state == GameState.PLAYED)
-					state = GameState.BALL_IN_HAND;
-	
-				if (state == GameState.NO_SCRATCH_PLAYED) {
-					parent.switchTurns();
-					parent.sc.println("<CURRENT_PLAYER " + parent.getCurrentPlayer());
-				} else if (state == GameState.BALL_IN_HAND) {
-					parent.switchTurns();
-					b[0].isSunk = false;
-					b[0].pos = new Vector(TABLE_WIDTH / 2, TABLE_HEIGHT / 2 + PLAY_HEIGHT / 4);
-					state = GameState.PLACING_BALL;
-					parent.sc.println("<CURRENT_PLAYER " + parent.getCurrentPlayer());
-					parent.sc.println("<BALL_IN_HAND");
-					return;
-				} else if (state == GameState.CONTINUE_PLAYED) {
-					parent.sc.println("<CURRENT_PLAYER " + parent.getCurrentPlayer());
-				}
-	
-				state = GameState.PLAY;
-				if (parent.getCurrentPlayerObject().getType() == UserPanel.EIGHT_ID) {
-					parent.sc.println("<CALL_POCKET");
-					calledPocketId = 0;
-					isPocketCalled = false;
-				}
-				isBreak = false;
-			} else if (isStaticSystem() && (state == GameState.GAME_OVER_WIN || state == GameState.GAME_OVER_LOSS)) {
-				if (state == GameState.GAME_OVER_WIN)
-					parent.sc.println("<WINNER " + parent.getCurrentPlayer());
-				else
-					parent.sc.println("<WINNER " + (parent.getCurrentPlayer() ^ 1));
+			isBreak = false;
+			if (state == GameState.PLAYED)
+				state = GameState.BALL_IN_HAND;
+
+			if (state == GameState.NO_SCRATCH_PLAYED) {
+				parent.switchTurns();
+				parent.sc.println("<CURRENT_PLAYER " + parent.getCurrentPlayer());
+			} else if (state == GameState.BALL_IN_HAND) {
+				parent.switchTurns();
+				b[0].isSunk = false;
+				b[0].pos = new Vector(TABLE_WIDTH / 2, TABLE_HEIGHT / 2 + PLAY_HEIGHT / 4);
+				state = GameState.PLACING_BALL;
+				parent.sc.println("<CURRENT_PLAYER " + parent.getCurrentPlayer());
+				parent.sc.println("<BALL_IN_HAND");
+				return;
+			} else if (state == GameState.CONTINUE_PLAYED) {
+				parent.sc.println("<CURRENT_PLAYER " + parent.getCurrentPlayer());
 			}
+
+			state = GameState.PLAY;
+			if (parent.getCurrentPlayerObject().getType() == UserPanel.EIGHT_ID) {
+				parent.sc.println("<CALL_POCKET");
+				calledPocketId = 0;
+				isPocketCalled = false;
+			}
+		} else if (isStaticSystem() && (state == GameState.GAME_OVER_WIN || state == GameState.GAME_OVER_LOSS)) {
+			if (state == GameState.GAME_OVER_WIN)
+				parent.sc.println("<WINNER " + parent.getCurrentPlayer());
+			else
+				parent.sc.println("<WINNER " + (parent.getCurrentPlayer() ^ 1));
+		}
 		}
 	}
 
@@ -363,7 +362,7 @@ public class GamePanel extends JPanel {
 	public void setIsPocketCalled (boolean isPocketCalled) {
 		this.isPocketCalled = isPocketCalled;
 	}
-	
+
 	/**
 	 * 
 	 * @param state state to set
