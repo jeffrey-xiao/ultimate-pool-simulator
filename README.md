@@ -30,3 +30,12 @@ a fixed coefficient of restitution. When a ball has achieved perfectly, it will 
 | Line.java               | Object that represents the border of the pool table.                                                           |
 | Vector.java             | Object that represents both points and direction vectors. Used in Ball, Line and the collision detection code. |
 | SerialCommunicator.java | Object that reads and writes to the serial port. Communicates with Tiva-C.                                     |
+
+## Tiva File Structure
+| Class Name              | Role                                                                                                           |
+|-------------------------|----------------------------------------------------------------------------------------------------------------|
+| pool.ino            | Main file that communicates with the Tiva-c. Also handles communication between accelerometer.ino, SerialReader.ino and Game_UI.ino                                                                                            |
+| accelerometer.ino        |Communicates with wire_util.ino for accelerometer data. Used for position and orientation tracking.                     |
+| Game_UI.ino          | Reads user input from Tiva-c (buttons, switches, potentiometer).                                                                      |
+| SerialReader.ino          | File is used to read information from serial port. Communicates with Java GUI.                                                                   |
+| wire_util.ino               | Reads accelerometer data from the Orbit Booster Pack.                                                            |
