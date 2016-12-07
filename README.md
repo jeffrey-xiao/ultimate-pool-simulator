@@ -56,6 +56,6 @@ a fixed coefficient of restitution. When a ball has achieved perfectly, it will 
 <img src="/screenshots/example_3.png" height="500px"/>
 
 
-*Calling the pocket when there's only the black ball left.*
+*Calling the pocket when there's only the eight ball left.*
 
 <img src="/screenshots/example_4.png" height="500px"/>
